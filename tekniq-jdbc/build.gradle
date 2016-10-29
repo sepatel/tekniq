@@ -1,0 +1,6 @@
+dependencies {
+    compile project(":tekniq-core")
+    compile 'com.github.andrewoma.kwery:core:0.15'
+    compile 'org.vibur:vibur-dbcp:11.0'
+    testCompile 'org.hsqldb:hsqldb:2.3.4'
+}

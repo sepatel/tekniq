@@ -1,0 +1,102 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.junit.platform:junit-platform-gradle-plugin:1.0.0-M2"
+        classpath 'net.researchgate:gradle-release:2.4.0'
+    }
+}
+
+subprojects {
+    group 'io.tekniq'
+
+    apply plugin: 'java'
+    apply plugin: 'kotlin'
+    apply plugin: 'maven'
+    apply plugin: 'signing'
+    apply plugin: 'net.researchgate.release'
+    apply plugin: 'org.junit.platform.gradle.plugin'
+
+    sourceCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+        testCompile 'junit:junit:4.12'
+        testCompile "org.jetbrains.spek:spek-api:$spek_version"
+        testRuntime "org.jetbrains.spek:spek-junit-platform-engine:$spek_version"
+        testRuntime 'com.hynnet:logback-classic:1.1.3'
+    }
+
+    junitPlatform {
+        engines {
+            include 'spek'
+        }
+    }
+
+    task javadocJar(type: Jar) {
+        classifier = 'javadoc'
+        from javadoc
+    }
+
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives jar
+        archives javadocJar
+        archives sourcesJar
+    }
+
+    signing {
+        sign configurations.archives
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    authentication(userName: ossrhUsername, password: ossrhPassword)
+                }
+                snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                    authentication(userName: ossrhUsername, password: ossrhPassword)
+                }
+                pom.project {
+                    name project.name
+                    packaging 'jar'
+                    description 'A framework designed around Kotlin'
+                    url 'https://github.com/sepatel/tekniq'
+
+                    scm {
+                        connection 'scm:git:git://github.com/sepatel/tekniq.git'
+                        developerConnection 'scm:git:git://github.com/sepatel/tekniq'
+                        url 'http://github.com/sepatel/tekniq'
+                    }
+
+                    licenses {
+                        license {
+                            name 'MIT License'
+                            url 'https://raw.githubusercontent.com/sepatel/tekniq/master/LICENSE'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id 'sepatel'
+                            name 'Sejal Patel'
+                            email 'sejal@tekniq.io'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
