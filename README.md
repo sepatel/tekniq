@@ -160,8 +160,7 @@ ds.transaction {
 ```
 
 ## tekniq-rest
-A tool utilizing jackson-mapper for making JSON based RESTful calls to
-web services.
+A tool utilizing jackson-mapper for making RESTful calls to web services.
 
 ```kotlin
 val rest = TqRestClient()
@@ -334,8 +333,8 @@ fun routeLookupServices(route: SparklinRoute) {
     route.apply {
         get("/lookup/names") { req, resp -> LookupDao.names.values }
         get("/lookup/names/:id") { req, resp -> LookupDao.names[req.params("id")] }
-        get("/lookup/orders") { req, resp -> LookupDao.paymentTerms.values }
-        get("/lookup/orders/:id") { req, resp -> LookupDao.paymentTerms[req.params("id").toInt()] }
+        get("/lookup/orders") { req, resp -> LookupDao.orders.values }
+        get("/lookup/orders/:id") { req, resp -> LookupDao.orders[req.params("id").toInt()] }
     }
 }
 ```
