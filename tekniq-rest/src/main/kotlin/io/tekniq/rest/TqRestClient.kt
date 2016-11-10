@@ -58,12 +58,12 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler) {
                 response = TqResponse(-1, e.message ?: "", conn.headerFields)
             }
         }
-        logHandler.onRestLog(RestLog(method, url, duration = duration, request = payload, status = response!!.status, response = response!!.json))
+        logHandler.onRestLog(RestLog(method, url, duration = duration, request = payload, status = response!!.status, response = response!!.body))
         return response ?: TqResponse(-1, "", emptyMap())
     }
 }
 
-data class TqResponse(val status: Int, val json: String, private val headers: Map<String, Any>) {
+data class TqResponse(val status: Int, val body: String, private val headers: Map<String, Any>) {
     fun header(key: String): Any? {
         val value = headers[key] ?: return null
         if (value is Collection<*> && value.size == 1) {
@@ -82,7 +82,7 @@ data class TqResponse(val status: Int, val json: String, private val headers: Ma
     }
 
     inline fun <reified T : Any> jsonAs(): T = jsonAs(T::class)
-    fun <T : Any> jsonAs(type: KClass<T>): T = mapper.readValue(json, type.java)
+    fun <T : Any> jsonAs(type: KClass<T>): T = mapper.readValue(body, type.java)
 }
 
 data class RestLog(val method: String, val url: String, val ts: Date = Date(), val duration: Long = 0, val request: String? = null, val status: Int = 0, val response: String? = null)

@@ -33,7 +33,7 @@ class SparklinTest : Spek({
                 assertEquals(200, response.status)
             }
             it("Should content correctly") {
-                assertNotNull(response.json)
+                assertNotNull(response.body)
                 val mock = response.jsonAs<MockResponse>()
                 assertEquals("purple", mock.color)
                 assertEquals(42, mock.grade)
