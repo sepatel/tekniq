@@ -1,8 +1,17 @@
 package io.tekniq.config
 
-class TqChainConfig(vararg private val config: TqConfig) : TqConfig() {
+open class TqChainConfig(vararg private val confs: TqConfig) : TqConfig() {
+    private val refConfigurations: MutableList<TqConfig>
+
+    init {
+        refConfigurations = mutableListOf<TqConfig>()
+    }
+
+    fun add(config: TqConfig) = refConfigurations.add(config)
+    override fun reload() = confs.forEach { it.reload() }
+
     override fun <T> getValue(key: String, type: Class<T>?): T? {
-        config.forEach {
+        confs.forEach {
             val v = it.getValue(key, type)
             if (v != null) {
                 return v

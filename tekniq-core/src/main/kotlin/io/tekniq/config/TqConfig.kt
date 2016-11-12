@@ -7,7 +7,10 @@ interface TqConfigObserver {
 }
 
 abstract class TqConfig {
-    private val configs: MutableMap<String, Any?> = mutableMapOf()
+    val keys: Set<String>
+        get() = configs.keys
+
+    protected var configs: MutableMap<String, Any?> = mutableMapOf()
     private val observers = arrayListOf<DefaultTqConfigObserver>()
 
     fun contains(key: String): Boolean {
@@ -34,14 +37,14 @@ abstract class TqConfig {
     open fun getLong(key: String, defaultValue: Number? = null): Long? = get<Long>(key)?.toLong() ?: defaultValue?.toLong()
     open fun getShort(key: String, defaultValue: Number? = null): Short? = get<Short>(key)?.toShort() ?: defaultValue?.toShort()
 
-    fun getKeys() = setOf(configs.keys)
-
     fun onChange(key: String? = null, callback: TqConfigObserver.(key: String, value: Any?, oldValue: Any?) -> Unit) =
             observers.add(DefaultTqConfigObserver(key, observers, callback))
 
     abstract fun <T> getValue(key: String, type: Class<T>? = null): T?
 
-    protected fun reload(newConfigs: MutableMap<String, Any?>) {
+    open fun reload() = Unit
+
+    protected fun reload(newConfigs: Map<String, Any?>) {
         val existing = HashSet<String>(configs.keys)
         newConfigs.entries.forEach {
             val oldValue = configs[it.key]
