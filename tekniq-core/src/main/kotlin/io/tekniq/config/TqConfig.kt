@@ -10,7 +10,7 @@ abstract class TqConfig {
     val keys: Set<String>
         get() = configs.keys
 
-    protected var configs: MutableMap<String, Any?> = mutableMapOf()
+    private val configs: MutableMap<String, Any?> = mutableMapOf()
     private val observers = arrayListOf<DefaultTqConfigObserver>()
 
     fun contains(key: String): Boolean {

@@ -2,11 +2,10 @@ package io.tekniq.config
 
 open class TqMapConfig(values: Map<String, Any>) : TqConfig() {
     init {
-        configs.putAll(values)
+        reload(values)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T> getValue(key: String, type: Class<T>?): T? = configs[key] as T
+    override fun <T> getValue(key: String, type: Class<T>?): T? = null // no dynamic loading takes place
 
     override fun getDouble(key: String, defaultValue: Number?): Double? {
         if (!contains(key)) {
