@@ -2,20 +2,17 @@ package io.tekniq.jdbc
 
 import org.junit.Assert.*
 import org.junit.Test
-import java.sql.DriverManager
 import java.sql.ResultSet
 
 data class FooRow(val id: Int, val name: String)
 
 class TqConnectionExtKtTest {
-    private val conn = DriverManager.getConnection("jdbc:hsqldb:mem:tekniq", "sa", "").apply {
-        autoCommit = true
+    private val conn = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
         val stmt = createStatement()
         stmt.execute("DROP TABLE spektest IF EXISTS ")
         stmt.execute("CREATE TABLE spektest ( id INTEGER , name VARCHAR(100) )")
         stmt.execute("INSERT INTO spektest(id, name) VALUES(1, 'Foo')")
         stmt.close()
-        commit()
     }
 
     @Test fun insertRecord() {
