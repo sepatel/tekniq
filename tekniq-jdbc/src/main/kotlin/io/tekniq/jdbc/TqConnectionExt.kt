@@ -44,7 +44,7 @@ fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: ResultSet
 fun Connection.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
 fun Connection.insert(sql: String, vararg params: Any?): Int = update(sql, *params)
 fun Connection.update(sql: String, vararg params: Any?): Int {
-    val stmt = prepareStatement(sql)
+    val stmt = prepareStatement(this, sql, *params)
     val result = stmt.executeUpdate()
     stmt.closeOnCompletion()
     return result

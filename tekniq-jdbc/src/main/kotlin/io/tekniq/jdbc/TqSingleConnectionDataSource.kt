@@ -47,6 +47,7 @@ open class TqSingleConnectionDataSource(url: String, username: String? = null, p
 
     override fun <T : Any?> unwrap(iface: Class<T>?): T {
         if (iface!!.isInstance(this)) {
+            @Suppress("UNCHECKED_CAST")
             return this as T
         }
         throw SQLException("Connection cannot be unwrapped to ${iface.name}")
