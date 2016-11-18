@@ -8,6 +8,15 @@ open class TqChainConfig(vararg private val confs: TqConfig) : TqConfig() {
     }
 
     fun add(config: TqConfig) = refConfigurations.add(config)
+    override fun contains(key: String): Boolean {
+        confs.forEach {
+            if (it.contains(key)) {
+                return true
+            }
+        }
+        return false
+    }
+
     override fun reload() = confs.forEach { it.reload() }
 
     override fun <T> getValue(key: String, type: Class<T>?): T? {

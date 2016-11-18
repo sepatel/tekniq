@@ -13,7 +13,7 @@ abstract class TqConfig {
     private val configs: MutableMap<String, Any?> = mutableMapOf()
     private val observers = arrayListOf<DefaultTqConfigObserver>()
 
-    fun contains(key: String): Boolean {
+    open fun contains(key: String): Boolean {
         if (!configs.containsKey(key)) {
             getValue<Any?>(key) // load it into the configs in case this is the first check
         }
@@ -31,11 +31,70 @@ abstract class TqConfig {
         return configs[key] as T // Allow the casting exception. Cannot make an array to an Int for example.
     }
 
-    open fun getDouble(key: String, defaultValue: Number? = null): Double? = get<Double>(key)?.toDouble() ?: defaultValue?.toDouble()
-    open fun getFloat(key: String, defaultValue: Number? = null): Float? = get<Float>(key)?.toFloat() ?: defaultValue?.toFloat()
-    open fun getInt(key: String, defaultValue: Number? = null): Int? = get<Int>(key)?.toInt() ?: defaultValue?.toInt()
-    open fun getLong(key: String, defaultValue: Number? = null): Long? = get<Long>(key)?.toLong() ?: defaultValue?.toLong()
-    open fun getShort(key: String, defaultValue: Number? = null): Short? = get<Short>(key)?.toShort() ?: defaultValue?.toShort()
+    open fun getDouble(key: String, defaultValue: Double? = null): Double? {
+        if (!contains(key)) {
+            return defaultValue?.toDouble() ?: null
+        }
+        val any = get<Any>(key)
+        when (any) {
+            null -> return null
+            is Number -> return any.toDouble()
+            is String -> return any.toDouble()
+        }
+        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Double")
+    }
+
+    open fun getFloat(key: String, defaultValue: Float? = null): Float? {
+        if (!contains(key)) {
+            return defaultValue?.toFloat() ?: null
+        }
+        val any = get<Any>(key)
+        when (any) {
+            null -> return null
+            is Number -> return any.toFloat()
+            is String -> return any.toFloat()
+        }
+        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Float")
+    }
+
+    open fun getInt(key: String, defaultValue: Int? = null): Int? {
+        if (!contains(key)) {
+            return defaultValue?.toInt() ?: null
+        }
+        val any = get<Any>(key)
+        when (any) {
+            null -> return null
+            is Number -> return any.toInt()
+            is String -> return any.toInt()
+        }
+        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Int")
+    }
+
+    open fun getLong(key: String, defaultValue: Long? = null): Long? {
+        if (!contains(key)) {
+            return defaultValue?.toLong() ?: null
+        }
+        val any = get<Any>(key)
+        when (any) {
+            null -> return null
+            is Number -> return any.toLong()
+            is String -> return any.toLong()
+        }
+        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Long")
+    }
+
+    open fun getShort(key: String, defaultValue: Short? = null): Short? {
+        if (!contains(key)) {
+            return defaultValue?.toShort() ?: null
+        }
+        val any = get<Any>(key)
+        when (any) {
+            null -> return null
+            is Number -> return any.toShort()
+            is String -> return any.toShort()
+        }
+        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Short")
+    }
 
     fun onChange(key: String? = null, callback: TqConfigObserver.(key: String, value: Any?, oldValue: Any?) -> Unit) =
             observers.add(DefaultTqConfigObserver(key, observers, callback))
