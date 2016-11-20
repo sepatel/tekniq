@@ -8,7 +8,7 @@ more.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-core:0.3"
+compile "io.tekniq:tekniq-core:0.3.1"
 ```
 
 **Maven Dependency**
@@ -27,7 +27,7 @@ idiom supported. Does not require overhead of object mappings or such.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-jdbc:0.3"
+compile "io.tekniq:tekniq-jdbc:0.3.1"
 ```
 
 **Maven Dependency**
@@ -44,7 +44,7 @@ A tool utilizing jackson-mapper for making RESTful calls to web services.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-rest:0.3"
+compile "io.tekniq:tekniq-rest:0.3.1"
 ```
 
 **Maven Dependency**
@@ -64,7 +64,7 @@ body to complex object types, and more.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-sparklin:0.3"
+compile "io.tekniq:tekniq-sparklin:0.3.1"
 ```
 
 **Maven Dependency**
