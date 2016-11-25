@@ -20,17 +20,6 @@ fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level: Int = 
     }
 }
 
-fun DataSource.call(sql: String, action: CallableStatement.() -> Unit) {
-    val conn = connection
-    try {
-        conn.autoCommit = false
-        conn.call(sql, action = action)
-        conn.commit()
-    } finally {
-        conn.close()
-    }
-}
-
 fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): T? {
     val conn = connection
     try {

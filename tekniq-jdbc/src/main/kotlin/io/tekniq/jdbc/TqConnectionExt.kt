@@ -65,16 +65,6 @@ fun Connection.insertReturnKey(sql: String, vararg params: Any?): String? {
     return answer
 }
 
-
-fun Connection.call(sql: String, action: CallableStatement.() -> Unit) {
-    val stmt = prepareCall(sql)
-    try {
-        action.invoke(stmt)
-    } finally {
-        stmt.close()
-    }
-}
-
 fun <T> Connection.call(sql: String, action: CallableStatement.() -> T): T? {
     val stmt = prepareCall(sql)
     try {
