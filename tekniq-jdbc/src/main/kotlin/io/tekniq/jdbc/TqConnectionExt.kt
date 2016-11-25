@@ -6,7 +6,7 @@ import java.util.*
 import java.util.Date
 
 fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit) {
-    val stmt = prepareStatement(this, sql, *params)
+    val stmt = prepareStatement(sql).apply { applyParams(this, *params) }
     val rs = stmt.executeQuery()
     while (rs.next()) {
         action.invoke(rs)
@@ -17,7 +17,7 @@ fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> 
 
 fun <T> Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> {
     val list = mutableListOf<T>()
-    val stmt = prepareStatement(this, sql, *params)
+    val stmt = prepareStatement(sql).apply { applyParams(this, *params) }
     val rs = stmt.executeQuery()
     while (rs.next()) {
         list.add(action.invoke(rs))
@@ -29,7 +29,7 @@ fun <T> Connection.select(sql: String, vararg params: Any?, action: ResultSet.()
 
 fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? {
     var value: T? = null
-    val stmt = prepareStatement(this, sql, *params)
+    val stmt = prepareStatement(sql).apply { applyParams(this, *params) }
 
     params.forEachIndexed { i, any -> stmt.setObject(i + 1, any) }
     val rs = stmt.executeQuery()
@@ -44,11 +44,27 @@ fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: ResultSet
 fun Connection.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
 fun Connection.insert(sql: String, vararg params: Any?): Int = update(sql, *params)
 fun Connection.update(sql: String, vararg params: Any?): Int {
-    val stmt = prepareStatement(this, sql, *params)
+    val stmt = prepareStatement(sql).apply { applyParams(this, *params) }
     val result = stmt.executeUpdate()
-    stmt.closeOnCompletion()
+    stmt.close()
     return result
 }
+
+fun Connection.insertReturnKey(sql: String, vararg params: Any?): String? {
+    val stmt = prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).apply { applyParams(this, *params) }
+    val result = stmt.executeUpdate()
+    var answer: String? = null
+    if (result == 1) {
+        val rs = stmt.generatedKeys
+        if (rs.next()) {
+            answer = rs.getString(1)
+        }
+        rs.close()
+    }
+    stmt.close()
+    return answer
+}
+
 
 fun Connection.call(sql: String, action: CallableStatement.() -> Unit) {
     val stmt = prepareCall(sql)
@@ -68,7 +84,7 @@ fun <T> Connection.call(sql: String, action: CallableStatement.() -> T): T? {
     }
 }
 
-private fun prepareStatement(conn: Connection, sql: String, vararg params: Any?) = conn.prepareStatement(sql).apply {
+private fun applyParams(stmt: PreparedStatement, vararg params: Any?) = stmt.apply {
     params.forEachIndexed { i, any ->
         when (any) {
             is Time -> setTime(i + 1, any) // is also a java.util.Date so treat naturally instead

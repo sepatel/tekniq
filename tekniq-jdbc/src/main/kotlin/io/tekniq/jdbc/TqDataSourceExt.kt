@@ -5,12 +5,16 @@ import java.sql.Connection
 import java.sql.ResultSet
 import javax.sql.DataSource
 
-fun DataSource.transaction(level: Int = Connection.TRANSACTION_READ_COMMITTED, boundary: Connection.() -> Unit) {
+fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level: Int = Connection.TRANSACTION_READ_COMMITTED, boundary: Connection.() -> T): T? {
     val conn = connection
     try {
         conn.autoCommit = false
         conn.transactionIsolation = level
-        boundary.invoke(conn)
+        val result = boundary.invoke(conn)
+        if (commitOnCompletion) {
+            conn.commit()
+        }
+        return result
     } finally {
         conn.close()
     }

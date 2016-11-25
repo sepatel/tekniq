@@ -84,13 +84,14 @@ println("Executed complex method to determine star sign of $star")
 
 ## Transaction
 Create a transaction space which will auto-rollback if any exception is
-thrown. Must be explicitly committed at the end or will be rolled back.
+thrown. Will be committed at the end unless commitOnCompletion is set to
+false.
 
 ```kotlin
 // only available on the datasource extension
 // will obtain a connection, set auto-commit to false, and configure the
 // desired transaction level defaulting to read committed
-ds.transaction {
+ds.transaction(commitOnCompletion=false) {
   conn.insert("INSERT INTO person(name, age) VALUES(?, ?)", "John", 20)
   // rollback()
   conn.update("UPDATE person SET age=age * 2 WHERE age < ?", 20)

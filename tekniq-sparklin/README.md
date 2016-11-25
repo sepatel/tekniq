@@ -69,12 +69,14 @@ object SimpleAuthorizationManager : AuthorizationManager {
 
 Sparklin(SparklinConfig(authorizationManager = SimpleAuthorizationManager)) {
     get("/hello", { req, res ->
-        hasAny("ANONYMOUS", "MOMMY").stopOnRejections()
+        // Must have either ANONYMOUS or MOMMY permission
+        authz("ANONYMOUS", "MOMMY").stopOnRejections()
         MockResponse("John")
     }
     
     get("/hello/:name", { req, res ->
-        hasAll("ANONYMOUS", "MOMMY").stopOnRejections()
+        // Must have both ANONYMOUS and MOMMY permissions
+        authz(all = true, "ANONYMOUS", "MOMMY").stopOnRejections()
         MockResponse(req.params("name"))
     }
     
@@ -88,7 +90,7 @@ up a 404 page.
 
 ```kotlin
 val sparklinConfig = SparklinConfig(
-        staticFiles = SparklinStaticFiles(externalFileLocation = "webapp/src/main/resources/ui")
+        staticFiles = SparklinStaticFiles(externalFileLocation = "src/main/resources/ui")
 )
 
 Sparklin(sparklinConfig) {
@@ -132,27 +134,23 @@ fun main(args: Array<String>) {
 class NotFoundResource(val method: String, val path: String, val params: Map<String, String> = emptyMap()) : Exception() {
 }
 
-fun handleExceptions(route: SparklinRoute) {
-    route.apply {
-        exception(NotFoundResource::class) { e, req, res ->
-            Pair(404, mapOf("errors" to listOf<Rejection>(
-                    Rejection("notFound", "${req.requestMethod()} ${req.pathInfo()}")
-            )))
-        }
+fun handleExceptions(route: SparklinRoute) = route.apply {
+    exception(NotFoundResource::class) { e, req, res ->
+        Pair(404, mapOf("errors" to listOf<Rejection>(
+                Rejection("notFound", "${req.requestMethod()} ${req.pathInfo()}")
+        )))
+    }
 
-        exception(Exception::class) { e, req, res ->
-            logger.error(e.message, e)
-            Pair(500, e.message ?: "Unexpected error $e")
-        }
+    exception(Exception::class) { e, req, res ->
+        logger.error(e.message, e)
+        Pair(500, e.message ?: "Unexpected error $e")
     }
 }
 
-fun routeLookupServices(route: SparklinRoute) {
-    route.apply {
-        get("/lookup/names") { req, resp -> LookupDao.names.values }
-        get("/lookup/names/:id") { req, resp -> LookupDao.names[req.params("id")] }
-        get("/lookup/orders") { req, resp -> LookupDao.orders.values }
-        get("/lookup/orders/:id") { req, resp -> LookupDao.orders[req.params("id").toInt()] }
-    }
+fun routeLookupServices(route: SparklinRoute) = route.apply {
+    get("/lookup/names") { req, resp -> LookupDao.names.values }
+    get("/lookup/names/:id") { req, resp -> LookupDao.names[req.params("id")] }
+    get("/lookup/orders") { req, resp -> LookupDao.orders.values }
+    get("/lookup/orders/:id") { req, resp -> LookupDao.orders[req.params("id").toInt()] }
 }
 ```
