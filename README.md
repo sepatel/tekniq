@@ -16,7 +16,7 @@ compile "io.tekniq:tekniq-core:0.3.1"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-core</artifactId>
-    <version>0.3</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
@@ -35,7 +35,7 @@ compile "io.tekniq:tekniq-jdbc:0.3.1"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-jdbc</artifactId>
-    <version>0.3</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
@@ -52,7 +52,7 @@ compile "io.tekniq:tekniq-rest:0.3.1"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-rest</artifactId>
-    <version>0.3</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
@@ -72,7 +72,7 @@ compile "io.tekniq:tekniq-sparklin:0.3.1"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-sparklin</artifactId>
-    <version>0.3</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
