@@ -12,28 +12,28 @@ import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
 open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler) {
-    fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse {
+    open fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse {
         return request("DELETE", url, headers = headers)
     }
 
-    fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse {
+    open fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse {
         return request("GET", url, headers = headers)
     }
 
-    fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse {
+    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse {
         return request("PUT", url, json, headers)
     }
 
-    fun post(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse {
+    open fun post(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse {
         return request("POST", url, json, headers)
     }
 
-    fun transform(json: Any?) = when (json) {
+    open fun transform(json: Any?) = when (json) {
         is String, is Number, is Boolean -> toString()
         else -> mapper.writeValueAsString(json)
     }
 
-    internal fun request(method: String, url: String, json: Any? = null, headers: Map<String, Any> = emptyMap()): TqResponse {
+    protected fun request(method: String, url: String, json: Any? = null, headers: Map<String, Any> = emptyMap()): TqResponse {
         val payload: String = transform(json)
         var response: TqResponse? = null
         val duration = measureTimeMillis {
