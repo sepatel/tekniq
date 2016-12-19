@@ -46,6 +46,7 @@ allprojects {
         testCompile 'junit:junit:4.12'
         testCompile "org.jetbrains.spek:spek-api:$spek_version"
         testRuntime "org.jetbrains.spek:spek-junit-platform-engine:$spek_version"
+        testRuntime "org.junit.platform:junit-platform-console:1.0.0-M2"
         testRuntime 'com.hynnet:logback-classic:1.1.3'
     }
 
