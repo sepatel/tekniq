@@ -1,13 +1,13 @@
 package io.tekniq.config
 
-import org.jetbrains.spek.api.SubjectSpek
+import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 
-class TqEnvConfigTest : SubjectSpek<TqEnvConfig>({
-    subject { TqEnvConfig() }
+class TqEnvConfigTest : Spek({
+    val subject = TqEnvConfig()
 
     describe("natural behavior of TqEnvConfig") {
         it("should have over 10 environment variables before any reading of config starts") {

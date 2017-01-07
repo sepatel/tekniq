@@ -9,7 +9,12 @@ import java.io.FileNotFoundException
 
 class TqPropertiesConfigTest : Spek({
     describe("TqPropertiesConfig w/file loading") {
-        val config = TqPropertiesConfig("src/test/resources/io/tekniq/config/test.properties")
+        var config: TqPropertiesConfig
+        try {
+            config = TqPropertiesConfig("src/test/resources/io/tekniq/config/test.properties")
+        } catch(e: FileNotFoundException) {
+            config = TqPropertiesConfig("tekniq-core/src/test/resources/io/tekniq/config/test.properties")
+        }
         it("Shall contain known entries") {
             assertEquals(3, config.keys.size)
             assertEquals(true, config.contains("name"))
@@ -56,13 +61,13 @@ class TqPropertiesConfigTest : Spek({
 
     describe("TqPropertiesConfig w/file loading of file not found") {
         it("Shall be empty with stopOnFailure=false") {
-            val config = TqPropertiesConfig("tekniq-core/src/test/resources/io/tekniq/config/test.properties", stopOnFailure = false)
+            val config = TqPropertiesConfig("invalid-folder/test.properties", stopOnFailure = false)
             assertEquals(0, config.keys.size)
         }
 
         it("Shall be throw an exception with default setting") {
             try {
-                TqPropertiesConfig("tekniq-core/src/test/resources/io/tekniq/config/test.properties")
+                TqPropertiesConfig("invalid-folder/test.properties")
                 fail("Should not have gotten this far")
             } catch (e: FileNotFoundException) {
                 // success

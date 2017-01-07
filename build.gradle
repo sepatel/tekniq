@@ -4,7 +4,7 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.junit.platform:junit-platform-gradle-plugin:1.0.0-M2"
+        classpath "org.junit.platform:junit-platform-gradle-plugin:$junit_version"
     }
 }
 
@@ -39,20 +39,23 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven { url "http://dl.bintray.com/jetbrains/spek" }
     }
 
     dependencies {
         compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-        testCompile 'junit:junit:4.12'
         testCompile "org.jetbrains.spek:spek-api:$spek_version"
+        testCompile "org.junit.platform:junit-platform-runner:$junit_version"
         testRuntime "org.jetbrains.spek:spek-junit-platform-engine:$spek_version"
-        testRuntime "org.junit.platform:junit-platform-console:1.0.0-M2"
+        testRuntime "org.junit.platform:junit-platform-console:$junit_version"
         testRuntime 'com.hynnet:logback-classic:1.1.3'
     }
 
     junitPlatform {
-        engines {
-            include 'spek'
+        filters {
+            engines {
+                include 'spek'
+            }
         }
     }
 
