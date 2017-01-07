@@ -7,6 +7,14 @@ val rest = TqRestClient()
 val resp = rest.get("https://www.google.com/")
 println("Status: ${resp.status}, Body: ${resp.body.substring(0, 50)} ...")
 ```
+or with lambda
+```kotlin
+val rest = TqRestClient()
+val text = rest.get("https://www.google.com/") {
+  body.substring(0, 50)
+}
+println("Body Snippet: $text")
+```
 
 ## Data Transformations
 ```kotlin
@@ -15,6 +23,20 @@ val rest = TqRestClient()
 
 val resp = rest.get("https://example.com/myCustomWebService/json")
 val x = resp.jsonAs<Fiddle>()
+println(x)
+```
+or with lambda using status checking for alternative result
+```kotlin
+data class Fiddle(name: String, height: Int?, birth: Date?)
+val rest = TqRestClient()
+
+val x = rest.get("https://example.com/myCustomWebService/json") {
+  if (status >= 400) {
+    null
+  } else {
+    resp.jsonAs<Fiddle>()
+  }
+}
 println(x)
 ```
 

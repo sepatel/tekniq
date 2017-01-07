@@ -32,7 +32,7 @@ class SparklinTest : Spek({
             it("Should be a successful 200 status code") {
                 assertEquals(200, response.status)
             }
-            it("Should content correctly") {
+            it("Should convert json correctly") {
                 assertNotNull(response.body)
                 val mock = response.jsonAs<MockResponse>()
                 assertEquals("purple", mock.color)
@@ -51,6 +51,26 @@ class SparklinTest : Spek({
             assertEquals(request.created, mock.found)
             assertEquals(request.name, mock.color)
             assertNull(mock.nullable)
+        }
+    }
+
+    describe("GET /test via Lambda") {
+        it("Shall allow me to return only the grade") {
+            val grade = rest.get("http://localhost:9999/test") {
+                jsonAs<MockResponse>().grade
+            }
+            assertEquals(42, grade)
+        }
+
+        it("Shall allow me to handle a 404 scenario") {
+            val grade = rest.get("http://localhost:9999/xtest") {
+                if (status >= 400) {
+                    -1
+                } else {
+                    jsonAs<MockResponse>().grade
+                }
+            }
+            assertEquals(-1, grade)
         }
     }
 

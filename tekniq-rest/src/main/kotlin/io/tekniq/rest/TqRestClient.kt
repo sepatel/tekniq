@@ -12,20 +12,29 @@ import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
 open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler) {
-    open fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse {
-        return request("DELETE", url, headers = headers)
+    open fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse = request("DELETE", url, headers = headers)
+    open fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse = request("GET", url, headers = headers)
+    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse = request("PUT", url, json, headers)
+    open fun post(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse = request("POST", url, json, headers)
+
+    open fun <T : Any?> delete(url: String, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
+        val response = delete(url, headers)
+        return action.invoke(response)
     }
 
-    open fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse {
-        return request("GET", url, headers = headers)
+    open fun <T : Any?> get(url: String, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
+        val response = get(url, headers)
+        return action.invoke(response)
     }
 
-    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse {
-        return request("PUT", url, json, headers)
+    open fun <T : Any?> put(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
+        val response = put(url, headers)
+        return action.invoke(response)
     }
 
-    open fun post(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse {
-        return request("POST", url, json, headers)
+    open fun <T : Any?> post(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
+        val response = post(url, headers)
+        return action.invoke(response)
     }
 
     open fun transform(json: Any?) = when (json) {
