@@ -28,12 +28,12 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler) {
     }
 
     open fun <T : Any?> put(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
-        val response = put(url, headers)
+        val response = put(url, json, headers)
         return action.invoke(response)
     }
 
     open fun <T : Any?> post(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
-        val response = post(url, headers)
+        val response = post(url, json, headers)
         return action.invoke(response)
     }
 
