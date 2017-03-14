@@ -50,7 +50,7 @@ object MyAppConfig : TqChainConfig(
     TqPropertiesConfig("classpath:/config.properties")
 )
 
-// later on anywhere you in your you can access it like
+// later on you can access it like
 fun test() {
     val port = MyAppConfig.getInt("port")
     val portWithDefault = MyAppConfig.getInt("port", 8080)
