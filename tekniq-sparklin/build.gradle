@@ -1,5 +1,5 @@
 dependencies {
-    compile "com.sparkjava:spark-core:2.5.1"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.4"
+    compile "com.sparkjava:spark-core:$spark_version"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
     testCompile project(":tekniq-rest")
 }
