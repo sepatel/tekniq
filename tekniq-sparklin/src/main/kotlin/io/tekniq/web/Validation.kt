@@ -96,13 +96,9 @@ open class Validation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun stopImmediately(data: Any? = null) {
-        throw ValidationException(rejections, data)
-    }
-
     fun stopOnRejections(data: Any? = null): Validation {
         if (rejections.size > 0) {
-            stopImmediately(data)
+            throw ValidationException(rejections, data)
         }
         return this
     }
