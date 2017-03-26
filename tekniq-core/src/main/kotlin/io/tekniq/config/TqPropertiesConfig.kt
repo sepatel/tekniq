@@ -7,9 +7,12 @@ open class TqPropertiesConfig(private val propertiesFile: String, private val st
     override fun reload() = reload(loadProperties(propertiesFile, stopOnFailure))
 }
 
+@Suppress("UNCHECKED_CAST")
 private fun loadProperties(propertiesFile: String, stopOnFailure: Boolean) = Properties().apply {
     if (propertiesFile.startsWith("classpath:")) {
-        load(javaClass.getResourceAsStream(propertiesFile.substring("classpath:".length)))
+        val filename = propertiesFile.substring("classpath:".length)
+        val stream = javaClass.getResourceAsStream(filename) ?: TqPropertiesConfig::class.java.classLoader.getResourceAsStream(filename)
+        load(stream)
     } else {
         try {
             load(File(propertiesFile).inputStream())

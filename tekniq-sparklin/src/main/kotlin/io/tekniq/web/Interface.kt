@@ -16,7 +16,7 @@ internal val mapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
-class NotAuthorizedException(rejections: Collection<Rejection>, val all: Boolean = false) : ValidationException(rejections)
+open class NotAuthorizedException(rejections: Collection<Rejection>, val all: Boolean = false) : ValidationException(rejections)
 
 interface AuthorizationManager {
     /**

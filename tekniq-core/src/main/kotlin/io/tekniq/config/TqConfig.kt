@@ -99,7 +99,7 @@ abstract class TqConfig {
     fun onChange(key: String? = null, callback: TqConfigObserver.(key: String, value: Any?, oldValue: Any?) -> Unit) =
             observers.add(DefaultTqConfigObserver(key, observers, callback))
 
-    abstract fun <T> getValue(key: String, type: Class<T>? = null): T?
+    abstract fun <T : Any?> getValue(key: String, type: Class<T>? = null): T?
 
     open fun reload() = Unit
 

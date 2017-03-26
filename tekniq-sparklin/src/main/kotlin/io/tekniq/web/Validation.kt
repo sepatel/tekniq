@@ -57,7 +57,7 @@ open class Validation(val src: Any?, val path: String = "") {
             return@test false
         }
 
-        if (it is String && it.trim().length == 0) {
+        if (it is String && it.trim().isEmpty()) {
             return@test false
         } else if (it is Collection<*>) {
             return@test it.isNotEmpty()
@@ -85,7 +85,7 @@ open class Validation(val src: Any?, val path: String = "") {
 
         it.forEachIndexed { i, element ->
             var name = fieldPath(field) ?: ""
-            if (name.length > 0) {
+            if (name.isNotEmpty()) {
                 name += '.'
             }
 
@@ -95,6 +95,8 @@ open class Validation(val src: Any?, val path: String = "") {
         }
         true
     }
+
+    fun exception(data: Any? = null) = ValidationException(rejections, data)
 
     fun stopOnRejections(data: Any? = null): Validation {
         if (rejections.size > 0) {
@@ -122,7 +124,7 @@ open class Validation(val src: Any?, val path: String = "") {
     }
 
     private fun fieldPath(field: String?): String? {
-        if (path.length > 0) {
+        if (path.isNotEmpty()) {
             if (field == null) {
                 return path
             }
