@@ -161,6 +161,7 @@ open class Validation(val src: Any?, val path: String = "") {
 }
 
 abstract class SparklinValidation(src: Any?, path: String = "") : Validation(src, path) {
+    fun authz(vararg authz: String): SparklinValidation = authz(false, *authz)
     abstract fun authz(all: Boolean = false, vararg authz: String): SparklinValidation
 }
 

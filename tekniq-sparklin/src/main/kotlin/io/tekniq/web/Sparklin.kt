@@ -1,5 +1,6 @@
 package io.tekniq.web
 
+import com.fasterxml.jackson.core.JsonParseException
 import spark.*
 import javax.servlet.http.HttpServletResponse
 import kotlin.reflect.KClass
@@ -107,17 +108,13 @@ private class DefaultRoute(val service: Service, val authorizationManager: Autho
     }
 }
 
-private class WebValidation(private val req: Request, private val authorizationManager: AuthorizationManager?) : SparklinValidation(req.jsonAs<Any>()) {
-    private val body: Map<*, *>?
-
-    init {
-        val bytes = req.bodyAsBytes()
-        if (bytes.size > 0) {
-            body = mapper.readValue(bytes, Map::class.java)
-        } else {
-            body = null
-        }
+private class WebValidation(private val req: Request, private val authorizationManager: AuthorizationManager?) : SparklinValidation({
+    try {
+        req.jsonAs<Map<*, *>>()
+    } catch (e: JsonParseException) {
+        null
     }
+}()) {
 
     override fun authz(all: Boolean, vararg authz: String): SparklinValidation {
         val userAuthzList = authorizationManager?.getAuthz(req) ?: emptyList()

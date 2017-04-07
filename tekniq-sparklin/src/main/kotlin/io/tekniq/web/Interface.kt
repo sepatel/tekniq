@@ -69,5 +69,8 @@ data class SparklinStaticFiles(val fileLocation: String? = null, val externalFil
                                val headers: Map<String, String> = emptyMap(), val expireInSeconds: Int = 1)
 
 private object JsonResponseTransformer : ResponseTransformer {
-    override fun render(model: Any?): String = mapper.writeValueAsString(model)
+    override fun render(model: Any?): String = when (model) {
+        is Unit -> ""
+        else -> mapper.writeValueAsString(model)
+    }
 }
