@@ -52,11 +52,85 @@ open class Validation(val src: Any?, val path: String = "") {
         return this
     }
 
+    fun ifDefined(field: String, action: () -> Unit): Validation {
+        if (src == null) {
+            return this
+        }
+
+        var value = src
+        field.split('.').forEach {
+            if (value == null) {
+                return this
+            } else if (value is Map<*, *>) {
+                if (!(value as Map<*, *>).containsKey(it)) {
+                    return this
+                }
+                value = (value as Map<*, *>)[it]
+            } else {
+                try {
+                    value!!.javaClass.getMethod("get" + it.capitalize()).let {
+                        it.isAccessible = true
+                        value = it.invoke(value)
+                    }
+                } catch (e: NoSuchMethodException) {
+                    return this
+                }
+            }
+        }
+
+        action.invoke()
+        return this
+    }
+
+    // TODO: Is there a cleaner way to reverse the ifDefined logic for this implementation instead?
+    fun ifNotDefined(field: String, action: () -> Unit): Validation {
+        if (src == null) {
+            action.invoke()
+            return this
+        }
+
+        var value = src
+        field.split('.').forEach {
+            if (value == null) {
+                action.invoke()
+                return this
+            } else if (value is Map<*, *>) {
+                if (!(value as Map<*, *>).containsKey(it)) {
+                    action.invoke()
+                    return this
+                }
+                value = (value as Map<*, *>)[it]
+            } else {
+                try {
+                    value!!.javaClass.getMethod("get" + it.capitalize()).let {
+                        it.isAccessible = true
+                        value = it.invoke(value)
+                    }
+                } catch (e: NoSuchMethodException) {
+                    action.invoke()
+                    return this
+                }
+            }
+        }
+
+        return this
+    }
+
     fun required(field: String? = null): Validation = test(field, "required") {
         if (it == null) {
             return@test false
         }
 
+        if (it is String && it.trim().isEmpty()) {
+            return@test false
+        } else if (it is Collection<*>) {
+            return@test it.isNotEmpty()
+        }
+
+        true
+    }
+
+    fun requiredOrNull(field: String? = null): Validation = test(field, "required") {
         if (it is String && it.trim().isEmpty()) {
             return@test false
         } else if (it is Collection<*>) {
@@ -161,7 +235,6 @@ open class Validation(val src: Any?, val path: String = "") {
 }
 
 abstract class SparklinValidation(src: Any?, path: String = "") : Validation(src, path) {
-    fun authz(vararg authz: String): SparklinValidation = authz(false, *authz)
-    abstract fun authz(all: Boolean = false, vararg authz: String): SparklinValidation
+    abstract fun authz(vararg authz: String, all: Boolean = true): SparklinValidation
 }
 

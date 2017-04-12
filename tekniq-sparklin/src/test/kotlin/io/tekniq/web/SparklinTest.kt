@@ -1,84 +1,76 @@
 package io.tekniq.web
 
 import io.tekniq.rest.TqRestClient
-import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.describe
-import org.jetbrains.spek.api.dsl.it
+import org.junit.*
 import org.junit.Assert.*
 import java.util.*
 
 private data class MockRequest(val name: String, val age: Int, val created: Date? = Date())
 private data class MockResponse(val color: String, val grade: Int = 42, val found: Date? = Date(), val nullable: String? = null)
 
-class SparklinTest : Spek({
+class SparklinTest {
     val rest = TqRestClient()
-    var sparklin: Sparklin? = null
 
-    describe("Initialize the Web Service") {
-        sparklin = Sparklin(SparklinConfig(port = 9999)) {
-            before { req, res -> res.header("Content-type", "application/json") }
+    companion object {
+        var sparklin: Sparklin? = null
 
-            get("/test") { req, res -> MockResponse("purple", found = Date(4200)) }
-            post("/spitback") { req, res ->
-                val mock = req.jsonAs<MockRequest>() ?: return@post null
-                MockResponse(mock.name, mock.age, mock.created)
-            }
-        }
-    }
+        @BeforeClass @JvmStatic fun initWebService() {
+            sparklin = Sparklin(SparklinConfig(port = 9999)) {
+                before { req, res -> res.header("Content-type", "application/json") }
 
-    describe("Happy Web Service Requests") {
-        describe("GET /test") {
-            val response = rest.get("http://localhost:9999/test")
-            it("Should be a successful 200 status code") {
-                assertEquals(200, response.status)
-            }
-            it("Should convert json correctly") {
-                assertNotNull(response.body)
-                val mock = response.jsonAs<MockResponse>()
-                assertEquals("purple", mock.color)
-                assertEquals(42, mock.grade)
-                assertEquals(4200L, mock.found?.time)
-            }
-            it("Should be a json response header") {
-                assertEquals("application/json", response.header("Content-Type"))
-            }
-        }
-
-        it("Should POST /spitback correclty") {
-            val request = MockRequest("Superman", 69, Date())
-            val response = rest.post("http://localhost:9999/spitback", request)
-            val mock = response.jsonAs<MockResponse>()
-            assertEquals(request.created, mock.found)
-            assertEquals(request.name, mock.color)
-            assertNull(mock.nullable)
-        }
-    }
-
-    describe("GET /test via Lambda") {
-        it("Shall allow me to return only the grade") {
-            val grade = rest.get("http://localhost:9999/test") {
-                jsonAs<MockResponse>().grade
-            }
-            assertEquals(42, grade)
-        }
-
-        it("Shall allow me to handle a 404 scenario") {
-            val grade = rest.get("http://localhost:9999/xtest") {
-                if (status >= 400) {
-                    -1
-                } else {
-                    jsonAs<MockResponse>().grade
+                get("/test") { req, res -> MockResponse("purple", found = Date(4200)) }
+                post("/spitback") { req, res ->
+                    val mock = req.jsonAs<MockRequest>() ?: return@post null
+                    MockResponse(mock.name, mock.age, mock.created)
                 }
             }
-            assertEquals(-1, grade)
         }
-    }
 
-    describe("Shutting down the Web Service") {
-        it("Should shutdown without issues") {
-            assertNotNull(sparklin)
+        @AfterClass @JvmStatic fun shutdownWebService() {
             sparklin?.stop()
         }
     }
-})
+
+    @Test fun happyWebServiceRequests() {
+        // GET /test
+        var response = rest.get("http://localhost:9999/test")
+        assertEquals(200, response.status)
+
+        // Should convert json correctly
+        assertNotNull(response.body)
+        var mock = response.jsonAs<MockResponse>()
+        assertEquals("purple", mock.color)
+        assertEquals(42, mock.grade)
+        assertEquals(4200L, mock.found?.time)
+
+        // Should be a json response header
+        assertEquals("application/json", response.header("Content-Type"))
+
+        // Should POST /spitback correclty
+        val request = MockRequest("Superman", 69, Date())
+        response = rest.post("http://localhost:9999/spitback", request)
+        mock = response.jsonAs<MockResponse>()
+        assertEquals(request.created, mock.found)
+        assertEquals(request.name, mock.color)
+        assertNull(mock.nullable)
+    }
+
+    @Test fun lambdaTesting() {
+        // Shall allow me to return only the grade
+        var grade = rest.get("http://localhost:9999/test") {
+            jsonAs<MockResponse>().grade
+        }
+        assertEquals(42, grade)
+
+        // Shall allow me to handle a 404 scenario
+        grade = rest.get("http://localhost:9999/xtest") {
+            if (status >= 400) {
+                -1
+            } else {
+                jsonAs<MockResponse>().grade
+            }
+        }
+        assertEquals(-1, grade)
+    }
+}
 
