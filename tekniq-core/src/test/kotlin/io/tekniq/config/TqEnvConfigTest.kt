@@ -1,23 +1,17 @@
 package io.tekniq.config
 
-import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.describe
-import org.jetbrains.spek.api.dsl.it
 import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Test
 
-class TqEnvConfigTest : Spek({
+class TqEnvConfigTest {
     val subject = TqEnvConfig()
 
-    describe("natural behavior of TqEnvConfig") {
-        it("should have over 10 environment variables before any reading of config starts") {
-            Assert.assertTrue(subject.keys.size > 10)
-        }
+    @Test fun naturlaBehavior() {
+        Assert.assertTrue(subject.keys.size > 10)
 
-        it("should match all key/values correctly") {
-            System.getenv().forEach {
-                assertEquals(it.value, subject.get(it.key))
-            }
+        System.getenv().forEach {
+            assertEquals(it.value, subject.get(it.key))
         }
     }
-})
+}

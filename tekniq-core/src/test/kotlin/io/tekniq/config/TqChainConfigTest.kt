@@ -1,12 +1,11 @@
 package io.tekniq.config
 
-import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.describe
 import org.junit.Assert
+import org.junit.Test
 
-class TqChainConfigTest : Spek({
-    describe("An empty backing configuration") {
+class TqChainConfigTest {
+    @Test fun emptyBackingConfiguration() {
         val config = TqChainConfig()
         Assert.assertEquals(0, config.keys.size)
     }
-})
+}

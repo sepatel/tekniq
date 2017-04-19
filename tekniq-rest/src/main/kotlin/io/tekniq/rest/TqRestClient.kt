@@ -2,7 +2,6 @@ package io.tekniq.rest
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -11,7 +10,11 @@ import java.util.*
 import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
-open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler) {
+open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
+                        val mapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
+                                .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+                                .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)) {
     open fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse = request("DELETE", url, headers = headers)
     open fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse = request("GET", url, headers = headers)
     open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse = request("PUT", url, json, headers)
@@ -62,17 +65,17 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler) {
             try {
                 val responseCode = conn.responseCode
                 val stream = conn.errorStream ?: conn.inputStream
-                response = TqResponse(responseCode, stream.bufferedReader().use { it.readText() }, conn.headerFields)
+                response = TqResponse(responseCode, stream.bufferedReader().use { it.readText() }, conn.headerFields, mapper)
             } catch (e: IOException) {
-                response = TqResponse(-1, e.message ?: "", conn.headerFields)
+                response = TqResponse(-1, e.message ?: "", conn.headerFields, mapper)
             }
         }
         logHandler.onRestLog(RestLog(method, url, duration = duration, request = payload, status = response!!.status, response = response!!.body))
-        return response ?: TqResponse(-1, "", emptyMap())
+        return response ?: TqResponse(-1, "", emptyMap(), mapper)
     }
 }
 
-data class TqResponse(val status: Int, val body: String, private val headers: Map<String, Any>) {
+data class TqResponse(val status: Int, val body: String, private val headers: Map<String, Any>, private val mapper: ObjectMapper) {
     fun header(key: String): Any? {
         val value = headers[key] ?: return null
         if (value is Collection<*> && value.size == 1) {
@@ -104,10 +107,3 @@ private object NoOpRestLogHandler : RestLogHandler {
     override fun onRestLog(log: RestLog) {
     }
 }
-
-private val mapper = ObjectMapper().registerModule(KotlinModule())
-        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-        .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-
