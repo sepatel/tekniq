@@ -10,7 +10,7 @@ import spark.ResponseTransformer
 import spark.utils.SparkUtils
 import kotlin.reflect.KClass
 
-internal val mapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
+val sparklinMapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
         .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
         .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -48,7 +48,7 @@ fun <T : Any> Request.jsonAs(type: KClass<T>): T? {
     if (this.body() == "") {
         return null
     }
-    return mapper.readValue(this.body(), type.java)
+    return sparklinMapper.readValue(this.body(), type.java)
 }
 
 inline fun <reified T : Any> Request.jsonAs(): T? = jsonAs(T::class)
@@ -71,6 +71,6 @@ data class SparklinStaticFiles(val fileLocation: String? = null, val externalFil
 private object JsonResponseTransformer : ResponseTransformer {
     override fun render(model: Any?): String = when (model) {
         is Unit -> ""
-        else -> mapper.writeValueAsString(model)
+        else -> sparklinMapper.writeValueAsString(model)
     }
 }
