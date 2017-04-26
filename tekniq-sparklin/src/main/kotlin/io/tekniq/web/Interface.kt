@@ -1,12 +1,8 @@
 package io.tekniq.web
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import spark.Request
-import spark.Response
-import spark.ResponseTransformer
+import spark.*
 import spark.utils.SparkUtils
 import kotlin.reflect.KClass
 
@@ -44,14 +40,14 @@ interface SparklinRoute {
     fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>)
 }
 
-fun <T : Any> Request.jsonAs(type: KClass<T>): T? {
-    if (this.body() == "") {
-        return null
+fun <T : Any> Request.jsonAs(type: KClass<T>): T {
+    if (this.body().isNullOrBlank()) {
+        throw IllegalStateException("No data available to transform")
     }
     return sparklinMapper.readValue(this.body(), type.java)
 }
 
-inline fun <reified T : Any> Request.jsonAs(): T? = jsonAs(T::class)
+inline fun <reified T : Any> Request.jsonAs(): T = jsonAs(T::class)
 
 data class SparklinConfig(
         val ip: String = "0.0.0.0", val port: Int = 4567,

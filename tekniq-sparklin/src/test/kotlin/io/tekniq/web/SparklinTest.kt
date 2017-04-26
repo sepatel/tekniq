@@ -18,8 +18,9 @@ class SparklinTest {
             sparklin = Sparklin(SparklinConfig(port = 9999)) {
                 before { req, res -> res.header("Content-type", "application/json") }
 
-                get("/test") { req, res -> MockResponse("purple", found = Date(4200)) }
-                post("/spitback") { req, res ->
+                get("/blank") { _, _ -> Unit }
+                get("/test") { _, _ -> MockResponse("purple", found = Date(4200)) }
+                post("/spitback") { req, _ ->
                     val mock = req.jsonAs<MockRequest>() ?: return@post null
                     MockResponse(mock.name, mock.age, mock.created)
                 }
@@ -71,6 +72,11 @@ class SparklinTest {
             }
         }
         assertEquals(-1, grade)
+    }
+
+    @Test fun noResponseBody() {
+        val response = rest.get("http://localhost:9999/blank")
+        assertEquals("", response.body)
     }
 }
 

@@ -1,6 +1,9 @@
 package io.tekniq.web
 
 import java.util.*
+import java.util.regex.Pattern
+
+private val EMAIL_PATTERN = Pattern.compile("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@" + "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\\b")
 
 data class Rejection(val code: String, val field: String? = null, val message: String? = null)
 open class ValidationException(val rejections: Collection<Rejection>, val data: Any? = null) : Exception()
@@ -142,6 +145,13 @@ open class Validation(val src: Any?, val path: String = "") {
 
     fun date(field: String? = null): Validation = test(field, "invalidDate") {
         return@test (it == null || it is Date)
+    }
+
+    fun email(field: String? = null): Validation = test(field, "invalidEmail") {
+        if (it !is String) {
+            return@test false
+        }
+        return@test EMAIL_PATTERN.matcher(it.trim().toLowerCase()).matches()
     }
 
     fun number(field: String? = null): Validation = test(field, "invalidNumber") {
