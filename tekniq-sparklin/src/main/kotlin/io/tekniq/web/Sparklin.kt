@@ -1,6 +1,7 @@
 package io.tekniq.web
 
 import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.databind.JsonMappingException
 import spark.*
 import javax.servlet.http.HttpServletResponse
 import kotlin.reflect.KClass
@@ -109,10 +110,15 @@ private class DefaultRoute(val service: Service, val authorizationManager: Autho
 }
 
 private class WebValidation(private val req: Request, private val authorizationManager: AuthorizationManager?) : SparklinValidation({
-    try {
-        req.jsonAs<Map<*, *>>()
-    } catch (e: JsonParseException) {
-        null
+    when (req.body().isNotBlank()) { // only attempt if there is even anything worth attempting
+        true -> try {
+            req.jsonAs<Map<*, *>>()
+        } catch (e: JsonMappingException) {
+            null
+        } catch (e: JsonParseException) {
+            null
+        }
+        false -> null
     }
 }()) {
     override fun authz(vararg authz: String, all: Boolean): SparklinValidation {

@@ -21,8 +21,12 @@ class SparklinTest {
                 get("/blank") { _, _ -> Unit }
                 get("/test") { _, _ -> MockResponse("purple", found = Date(4200)) }
                 post("/spitback") { req, _ ->
-                    val mock = req.jsonAs<MockRequest>() ?: return@post null
+                    val mock = req.jsonAs<MockRequest>()
                     MockResponse(mock.name, mock.age, mock.created)
+                }
+                post("/list") { req, _ ->
+                    val list = req.jsonAs<List<Int>>()
+                    list.firstOrNull()
                 }
             }
         }
@@ -72,6 +76,13 @@ class SparklinTest {
             }
         }
         assertEquals(-1, grade)
+    }
+
+    @Test fun arrayResponseBody() {
+        val number = rest.post("http://localhost:9999/list", listOf(42, 69, 1942)) {
+            jsonAs<Int>()
+        }
+        assertEquals(42, number)
     }
 
     @Test fun noResponseBody() {
