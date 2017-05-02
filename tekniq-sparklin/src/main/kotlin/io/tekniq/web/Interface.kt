@@ -2,6 +2,7 @@ package io.tekniq.web
 
 import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import io.tekniq.validation.*
 import spark.*
 import spark.utils.SparkUtils
 import kotlin.reflect.KClass

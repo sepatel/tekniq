@@ -2,6 +2,7 @@ package io.tekniq.web
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonMappingException
+import io.tekniq.validation.*
 import spark.*
 import javax.servlet.http.HttpServletResponse
 import kotlin.reflect.KClass
@@ -20,10 +21,10 @@ class Sparklin(config: SparklinConfig = SparklinConfig(), routes: SparklinRoute.
         config.staticFiles?.headers?.let { service.staticFiles }
 
         val routeHandler = DefaultRoute(service, config.authorizationManager, config.responseTransformer)
-        routeHandler.exception(ValidationException::class) { e, req, res ->
+        routeHandler.exception(ValidationException::class) { e, _, _ ->
             Pair(400, mapOf("errors" to e.rejections, "data" to e.data).filter { it.value != null })
         }
-        routeHandler.exception(NotAuthorizedException::class) { e, req, res ->
+        routeHandler.exception(NotAuthorizedException::class) { e, _, _ ->
             Pair(401, mapOf("errors" to e.rejections, "type" to if (e.all) {
                 "ALL"
             } else {

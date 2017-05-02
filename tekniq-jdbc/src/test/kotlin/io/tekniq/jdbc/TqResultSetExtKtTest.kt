@@ -1,23 +1,25 @@
 package io.tekniq.jdbc
 
-import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.given
-import org.jetbrains.spek.api.dsl.it
 import org.junit.Assert.assertEquals
+import org.junit.Test
 
-class TqResultSetExtKtTest : Spek({
-    val subject = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
-        val stmt = createStatement()
-        stmt.execute("DROP TABLE spekresult IF EXISTS ")
-        stmt.execute("CREATE TABLE spekresult(id INTEGER, bool BOOLEAN, b TINYINT, small SMALLINT, number INTEGER, large BIGINT, f FLOAT, d DOUBLE)")
-        stmt.execute("INSERT INTO spekresult VALUES(1, true, 12, 131, 4096, ${Long.MAX_VALUE}, 3.14, ${Double.MAX_VALUE})")
-        stmt.execute("INSERT INTO spekresult VALUES(2, NULL, NULL, NULL, NULL, NULL, NULL, NULL)")
-        stmt.close()
+class TqResultSetExtKtTest {
+    companion object {
+
+        val subject = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
+            val stmt = createStatement()
+            stmt.execute("DROP TABLE spekresult IF EXISTS ")
+            stmt.execute("CREATE TABLE spekresult(id INTEGER, bool BOOLEAN, b TINYINT, small SMALLINT, number INTEGER, large BIGINT, f FLOAT, d DOUBLE)")
+            stmt.execute("INSERT INTO spekresult VALUES(1, true, 12, 131, 4096, ${Long.MAX_VALUE}, 3.14, ${Double.MAX_VALUE})")
+            stmt.execute("INSERT INTO spekresult VALUES(2, NULL, NULL, NULL, NULL, NULL, NULL, NULL)")
+            stmt.close()
+        }
     }
 
-    given("an open and valid db connection") {
+    @Test fun usingAnOpenAndValidDbConnection() {
         val sql = "SELECT * FROM spekresult WHERE id=?"
-        it("can read non-null values correctly") {
+        run {
+            // can read non-null values correctly
             subject.selectOne(sql, 1) {
                 assertEquals(1, getInt("id"))
                 assertEquals(Double.MAX_VALUE, getDoubleNull(8)!!, 0.1)
@@ -37,5 +39,5 @@ class TqResultSetExtKtTest : Spek({
             }
         }
     }
-})
+}
 

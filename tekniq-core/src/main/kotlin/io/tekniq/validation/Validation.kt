@@ -1,4 +1,4 @@
-package io.tekniq.web
+package io.tekniq.validation
 
 import java.util.*
 import java.util.regex.Pattern
@@ -180,7 +180,7 @@ open class Validation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun exception(data: Any? = null) = ValidationException(rejections, data)
+    inline fun stop(data: Any? = null): Nothing = throw ValidationException(rejections, data)
 
     fun stopOnRejections(data: Any? = null): Validation {
         if (rejections.size > 0) {

@@ -1,9 +1,8 @@
-package io.tekniq.web
-
-import org.junit.Test
+package io.tekniq.validation
 
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Test
 import java.util.*
 
 private data class PojoTestBean(val id: String, val name: String?, val weight: Float?, val birthday: Date?, val extra: Boolean, val nullable: Boolean?)

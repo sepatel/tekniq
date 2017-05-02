@@ -1,36 +1,38 @@
 package io.tekniq.jdbc
 
-import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.given
-import org.jetbrains.spek.api.dsl.it
 import org.junit.Assert.*
+import org.junit.Test
 import java.sql.ResultSet
 
 data class FooRow(val id: Int, val name: String)
 
-class TqConnectionExtKtTest : Spek({
-    val subject = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
-        val stmt = createStatement()
-        stmt.execute("DROP TABLE spektest IF EXISTS ")
-        stmt.execute("CREATE TABLE spektest ( id INTEGER , name VARCHAR(100) )")
-        stmt.execute("INSERT INTO spektest(id, name) VALUES(1, 'Foo')")
-        stmt.close()
+class TqConnectionExtKtTest {
+    companion object {
+        val subject = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
+            val stmt = createStatement()
+            stmt.execute("DROP TABLE spektest IF EXISTS ")
+            stmt.execute("CREATE TABLE spektest ( id INTEGER , name VARCHAR(100) )")
+            stmt.execute("INSERT INTO spektest(id, name) VALUES(1, 'Foo')")
+            stmt.close()
+        }
+
+        val mapper: ResultSet.() -> FooRow = {
+            FooRow(getInt("id"), getString("name"))
+        }
     }
 
-    val mapper: ResultSet.() -> FooRow = {
-        FooRow(getInt("id"), getString("name"))
-    }
-
-    given("an open and valid db connection") {
+    @Test fun usingAnOpenAndValidDbConnection() {
         val sql = "SELECT id, name FROM spektest WHERE id=?"
-        it("can read an existing record in a table") {
+        run {
+            // can read an existing record in a table
             val result = subject.selectOne(sql, 1, action = mapper)!!
             assertNotNull(result)
             assertEquals(1, result.id)
             assertEquals("Foo", result.name)
         }
 
-        it("can add 1 row and read the written record") {
+        run {
+            //can add 1 row and read the written record
             val rows = subject.insert("INSERT INTO spektest(id, name) VALUES(?, ?)", 42, "Meaning of Life")
             assertEquals(1, rows)
             assertEquals(2, subject.select("SELECT id, name FROM spektest", action = mapper).size)
@@ -40,12 +42,14 @@ class TqConnectionExtKtTest : Spek({
             assertEquals("Meaning of Life", result?.name)
         }
 
-        it("can return null when selecting a non-existing record") {
+        run {
+            //can return null when selecting a non-existing record
             val result = subject.selectOne(sql, 69, action = mapper)
             assertNull(result)
         }
 
-        it("can efficiently act upon multiple rows of data without mapping and memory overhead") {
+        run {
+            //can efficiently act upon multiple rows of data without mapping and memory overhead
             val sql = "SELECT id, name FROM spektest"
             val x = subject.select(sql) {
                 // returns a Unit not a FooRow
@@ -69,5 +73,5 @@ class TqConnectionExtKtTest : Spek({
             assertNotEquals(x, w)
         }
     }
-})
+}
 
