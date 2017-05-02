@@ -26,7 +26,7 @@ Sparklin(SparklinConfig(port = 9999)) {
 }
 ```
 
-## Validation Framework
+## Integrated Validation Framework
 ```kotlin
 Sparklin {
     post("/hello", { req, res ->
