@@ -16,7 +16,7 @@ class SparklinTest {
 
         @BeforeClass @JvmStatic fun initWebService() {
             sparklin = Sparklin(SparklinConfig(port = 9999)) {
-                before { req, res -> res.header("Content-type", "application/json") }
+                before { _, res -> res.header("Content-type", "application/json") }
 
                 get("/blank") { _, _ -> Unit }
                 get("/test") { _, _ -> MockResponse("purple", found = Date(4200)) }
