@@ -1,6 +1,7 @@
 package io.tekniq.cache
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import kotlin.concurrent.thread
 
@@ -48,6 +49,25 @@ class TqCacheTest {
 
         threads.forEach(Thread::join)
         validateStatistics(cache, 20 * 100 - 20, 20)
+    }
+
+    @Test fun cacheAllowsNullValues() {
+        val cache = TqCache<Int, String?>(recordStats = true) {
+            when (it % 2 == 0) {
+                true -> it.toString()
+                else -> null
+            }
+        }
+
+        validateStatistics(cache, 0, 0)
+        assertEquals("4", cache[4])
+        validateStatistics(cache, 0, 1)
+        assertEquals("4", cache[4])
+        validateStatistics(cache, 1, 1)
+        assertNull(cache[3])
+        validateStatistics(cache, 1, 2)
+        assertNull(cache[3])
+        validateStatistics(cache, 2, 2)
     }
 
     private fun validateStatistics(cache: TqCache<*, *>, hits: Int, misses: Int) {

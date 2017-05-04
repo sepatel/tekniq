@@ -8,35 +8,35 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
                          val expireAfterWrite: Long? = null,
                          val maximumSize: Int? = null,
                          val recordStats: Boolean = false,
-                         private val loader: (key: K) -> V?) : Map<K, V?> {
+                         private val loader: (key: K) -> V) : Map<K, V> {
     val stats: TqCacheStats // read-only version of the actual data
         get() = TqCacheStats(hits.get(), misses.get())
     private val hits = AtomicInteger()
     private val misses = AtomicInteger()
 
-    private val map = ConcurrentHashMap<K, TqCacheElement<V?>>()
+    private val map = ConcurrentHashMap<K, TqCacheElement<V>>()
 
-    override val entries: Set<Map.Entry<K, V?>>
+    override val entries: Set<Map.Entry<K, V>>
         get() = map.entries.map {
             AbstractMap.SimpleEntry(it.key, it.value.value)
         }.toSet()
     override val keys: Set<K>
         get() = map.keys
-    override val values: Collection<V?>
+    override val values: Collection<V>
         get() = map.entries.map { it.value.value }
     override val size: Int
         get() = map.size
 
     override fun containsKey(key: K): Boolean = map.containsKey(key) // TODO: Remove entry if expired
 
-    override fun containsValue(value: V?): Boolean = map.containsValue(value ?: false) // TODO: Remove entry if expired
+    override fun containsValue(value: V): Boolean = map.containsValue(value ?: false) // TODO: Remove entry if expired
 
-    override fun get(key: K): V? {
+    override fun get(key: K): V {
         val now = System.currentTimeMillis()
 
-        var elem: TqCacheElement<V?>
+        var elem: TqCacheElement<V>
         if (map.containsKey(key)) {
-            elem = map[key] ?: return null
+            elem = map[key]!!
             if ((expireAfterAccess != null && now > elem.accessed + expireAfterAccess)
                     || (expireAfterWrite != null && now > elem.created + expireAfterWrite)) {
                 elem = TqCacheElement(loader.invoke(key), now, now)
@@ -72,7 +72,7 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
         map.clear()
     }
 
-    fun seed(key: K, value: V?) {
+    fun seed(key: K, value: V) {
         map.put(key, TqCacheElement(value))
     }
 
@@ -102,5 +102,5 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
 }
 
 data class TqCacheStats(var hits: Int = 0, var misses: Int = 0)
-private data class TqCacheElement<out V>(val value: V?, var accessed: Long = System.currentTimeMillis(), val created: Long = System.currentTimeMillis())
+private data class TqCacheElement<out V>(val value: V, var accessed: Long = System.currentTimeMillis(), val created: Long = System.currentTimeMillis())
 
