@@ -2,7 +2,10 @@ package io.tekniq.cache
 
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.write
 
 open class TqCache<K, V>(val expireAfterAccess: Long? = null,
                          val expireAfterWrite: Long? = null,
@@ -14,7 +17,9 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
     private val hits = AtomicInteger()
     private val misses = AtomicInteger()
 
-    private val map = ConcurrentHashMap<K, TqCacheElement<V>>()
+    private val map = ConcurrentHashMap<K, TqCacheElement<V>>() // TODO: Need a concurrent linked hash map implementation.
+    private val creationOrder = ConcurrentLinkedQueue<K>() // TODO: This is a hack and not truly thread-safe for creation order logic
+    private val lock = ReentrantReadWriteLock()
 
     override val entries: Set<Map.Entry<K, V>>
         get() = map.entries.map {
@@ -33,7 +38,6 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
 
     override fun get(key: K): V {
         val now = System.currentTimeMillis()
-
         var elem: TqCacheElement<V>
         if (map.containsKey(key)) {
             elem = map[key]!!
@@ -48,11 +52,12 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
                 hits.andIncrement
             }
         } else {
-            if (maximumSize != null) { // TODO: Drop the LRU instead of the first thing found in the hash order
-                map.entries.drop(size - maximumSize) // drop the first thing you find
+            while (maximumSize != null && map.size >= maximumSize) {
+                lock.write { map.remove(creationOrder.poll()) }
             }
             elem = TqCacheElement(loader.invoke(key), now, now)
             map.put(key, elem)
+            lock.write { creationOrder.add(key) }
             if (recordStats) {
                 misses.andIncrement
             }
@@ -65,15 +70,25 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
     override fun isEmpty(): Boolean = map.isEmpty()
 
     fun invalidate(key: K) {
-        map.remove(key)
+        lock.write {
+            map.remove(key)
+            creationOrder.remove(key)
+        }
     }
 
     fun invalidateAll() {
-        map.clear()
+        lock.write {
+            map.clear()
+            creationOrder.clear()
+        }
     }
 
     fun seed(key: K, value: V) {
-        map.put(key, TqCacheElement(value))
+        lock.write {
+            map.put(key, TqCacheElement(value))
+            creationOrder.remove(key)
+            creationOrder.add(key)
+        }
     }
 
     fun seed(entries: Map<K, V>, replaceConflicts: Boolean = true) {
@@ -83,7 +98,10 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
                     map.put(it.key, TqCacheElement(it.value))
                 }
             } else {
-                map.put(it.key, TqCacheElement(it.value))
+                lock.write {
+                    map.put(it.key, TqCacheElement(it.value))
+                    creationOrder.add(it.key)
+                }
             }
         }
     }
@@ -95,7 +113,10 @@ open class TqCache<K, V>(val expireAfterAccess: Long? = null,
             val elem = iterator.next()
             if ((expireAfterAccess != null && now > elem.value.accessed + expireAfterAccess)
                     || (expireAfterWrite != null && now > elem.value.created + expireAfterWrite)) {
-                iterator.remove()
+                lock.write {
+                    creationOrder.remove(elem.key)
+                    iterator.remove()
+                }
             }
         }
     }
