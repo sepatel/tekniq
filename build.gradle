@@ -34,13 +34,14 @@ allprojects {
     apply plugin: 'signing'
 
     sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
     repositories {
         mavenCentral()
     }
 
     dependencies {
-        compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
         compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
         testCompile "junit:junit:$junit_version"
         testRuntime 'com.hynnet:logback-classic:1.1.3'
