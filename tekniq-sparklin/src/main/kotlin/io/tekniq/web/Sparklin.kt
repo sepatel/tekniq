@@ -21,6 +21,7 @@ class Sparklin(config: SparklinConfig = SparklinConfig(), routes: SparklinRoute.
         config.staticFiles?.headers?.let { service.staticFiles }
 
         val routeHandler = DefaultRoute(service, config.authorizationManager, config.responseTransformer)
+        routeHandler.before { request, _ -> request.attribute(BODY_CACHE, request.body()) }
         routeHandler.exception(ValidationException::class) { e, _, _ ->
             Pair(400, mapOf("errors" to e.rejections, "data" to e.data).filter { it.value != null })
         }
@@ -111,15 +112,15 @@ private class DefaultRoute(val service: Service, val authorizationManager: Autho
 }
 
 private class WebValidation(private val req: Request, private val authorizationManager: AuthorizationManager?) : SparklinValidation({
-    when (req.body().isNotBlank()) { // only attempt if there is even anything worth attempting
-        true -> try {
+    when (req.attribute<String?>(BODY_CACHE).isNullOrBlank()) { // only attempt if there is even anything worth attempting
+        true -> null
+        false -> try {
             req.jsonAs<Map<*, *>>()
         } catch (e: JsonMappingException) {
             null
         } catch (e: JsonParseException) {
             null
         }
-        false -> null
     }
 }()) {
     override fun authz(vararg authz: String, all: Boolean): SparklinValidation {

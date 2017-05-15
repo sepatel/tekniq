@@ -244,7 +244,3 @@ open class Validation(val src: Any?, val path: String = "") {
     }
 }
 
-abstract class SparklinValidation(src: Any?, path: String = "") : Validation(src, path) {
-    abstract fun authz(vararg authz: String, all: Boolean = true): SparklinValidation
-}
-

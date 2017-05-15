@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.tekniq.validation.*
 import spark.*
 import spark.utils.SparkUtils
+import java.util.*
 import kotlin.reflect.KClass
 
 val sparklinMapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
@@ -12,6 +13,7 @@ val sparklinMapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
         .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+internal val BODY_CACHE = "__${UUID.randomUUID()}"
 
 open class NotAuthorizedException(rejections: Collection<Rejection>, val all: Boolean = true) : ValidationException(rejections)
 
@@ -41,11 +43,13 @@ interface SparklinRoute {
     fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>)
 }
 
+fun Request.rawBody() = attribute<String?>(BODY_CACHE)
 fun <T : Any> Request.jsonAs(type: KClass<T>): T {
-    if (this.body().isNullOrBlank()) {
+    val body = this.attribute<String?>(BODY_CACHE)
+    if (body.isNullOrBlank()) {
         throw IllegalStateException("No data available to transform")
     }
-    return sparklinMapper.readValue(this.body(), type.java)
+    return sparklinMapper.readValue(body, type.java)
 }
 
 inline fun <reified T : Any> Request.jsonAs(): T = jsonAs(T::class)
@@ -64,6 +68,11 @@ data class SparklinKeystore(val keystoreFile: String, val keystorePassword: Stri
 
 data class SparklinStaticFiles(val fileLocation: String? = null, val externalFileLocation: String? = null,
                                val headers: Map<String, String> = emptyMap(), val expireInSeconds: Int = 1)
+
+
+abstract class SparklinValidation(src: Any?, path: String = "") : Validation(src, path) {
+    abstract fun authz(vararg authz: String, all: Boolean = true): SparklinValidation
+}
 
 private object JsonResponseTransformer : ResponseTransformer {
     override fun render(model: Any?): String = when (model) {
