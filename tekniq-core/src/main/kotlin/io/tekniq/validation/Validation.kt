@@ -163,6 +163,19 @@ open class Validation(val src: Any?, val path: String = "") {
         return@test EMAIL_PATTERN.matcher(it.trim().toLowerCase()).matches()
     }
 
+    fun length(field: String? = null, min: Int? = null, max: Int? = null): Validation = test(field, "invalidLength") {
+        if (it !is String) {
+            return@test false
+        }
+        if (min != null && it.length < min) {
+            return@test false
+        }
+        if (max != null && it.length > max) {
+            return@test false
+        }
+        true
+    }
+
     fun number(field: String? = null): Validation = test(field, "invalidNumber") {
         return@test (it == null || it is Number)
     }

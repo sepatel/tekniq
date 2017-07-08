@@ -100,4 +100,42 @@ class ValidationTest {
 
     @Test fun arrayOf() {
     }
+
+    @Test fun length() {
+        listOf(pojoBased, mapBased).forEach { validation ->
+            assertEquals(0, validation.tested)
+            assertEquals(0, validation.passed)
+            assertEquals(0, validation.rejections.size)
+
+            validation.length("name")
+            assertEquals(1, validation.tested)
+            assertEquals(1, validation.passed)
+            assertEquals(0, validation.rejections.size)
+
+            validation.length("name", min = 3)
+            assertEquals(2, validation.tested)
+            assertEquals(2, validation.passed)
+            assertEquals(0, validation.rejections.size)
+
+            validation.length("name", min = 5)
+            assertEquals(3, validation.tested)
+            assertEquals(2, validation.passed)
+            assertEquals(1, validation.rejections.size)
+
+            validation.length("name", max = 5)
+            assertEquals(4, validation.tested)
+            assertEquals(3, validation.passed)
+            assertEquals(1, validation.rejections.size)
+
+            validation.length("name", max = 2)
+            assertEquals(5, validation.tested)
+            assertEquals(3, validation.passed)
+            assertEquals(2, validation.rejections.size)
+
+            validation.length("name", max = 2, min = 5)
+            assertEquals(6, validation.tested)
+            assertEquals(3, validation.passed)
+            assertEquals(3, validation.rejections.size)
+        }
+    }
 }
