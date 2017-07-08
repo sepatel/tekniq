@@ -6,7 +6,16 @@ import java.util.regex.Pattern
 private val EMAIL_PATTERN = Pattern.compile("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@" + "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\\b")
 
 data class Rejection(val code: String, val field: String? = null, val message: String? = null)
-open class ValidationException(val rejections: Collection<Rejection>, val data: Any? = null) : Exception()
+open class ValidationException(val rejections: Collection<Rejection>, val data: Any? = null) : Exception() {
+    override val message: String?
+        get() = rejections.joinToString {
+            if (it.field != null) {
+                "${it.code}.${it.field}"
+            } else {
+                it.code
+            }
+        }
+}
 
 open class Validation(val src: Any?, val path: String = "") {
     val rejections = mutableListOf<Rejection>()

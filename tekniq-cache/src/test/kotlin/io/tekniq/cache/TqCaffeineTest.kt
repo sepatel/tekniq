@@ -4,28 +4,9 @@ import org.junit.Assert.*
 import org.junit.Test
 import kotlin.concurrent.thread
 
-class TqCacheTest : AbstractTqCacheTest() {
-    override fun <K, V> createCache(expireAfterAccess: Long?,
-                                    expireAfterWrite: Long?,
-                                    maximumSize: Long?,
-                                    recordStats: Boolean,
-                                    loader: (key: K) -> V): TqCacheMap<K, V>
-            = TqCache(expireAfterAccess = expireAfterAccess,
-            expireAfterWrite = expireAfterWrite,
-            maximumSize = maximumSize,
-            recordStats = recordStats,
-            loader = loader)
-}
-
-abstract class AbstractTqCacheTest {
-    abstract fun <K, V> createCache(expireAfterAccess: Long? = null,
-                                    expireAfterWrite: Long? = null,
-                                    maximumSize: Long? = null,
-                                    recordStats: Boolean = true,
-                                    loader: (key: K) -> V): TqCacheMap<K, V>
-
+class TqCaffeineTest {
     @Test fun simpleHit() {
-        val cache = createCache(recordStats = true, loader = String::toInt)
+        val cache = TqCaffeine(recordStats = true, loader = String::toInt)
         validateStatistics(cache, 0, 0)
 
         1.rangeTo(10).forEach {
@@ -36,7 +17,7 @@ abstract class AbstractTqCacheTest {
     }
 
     @Test fun zeroHitsOnThreadedUniques() {
-        val cache = createCache(recordStats = true, loader = String::toInt)
+        val cache = TqCaffeine(recordStats = true, loader = String::toInt)
         validateStatistics(cache, 0, 0)
 
         val threads = mutableListOf<Thread>()
@@ -53,7 +34,7 @@ abstract class AbstractTqCacheTest {
     }
 
     @Test fun multiThreadedUniqueHits() {
-        val cache = createCache(recordStats = true, loader = String::toInt)
+        val cache = TqCaffeine(recordStats = true, loader = String::toInt)
         validateStatistics(cache, 0, 0)
 
         val threads = mutableListOf<Thread>()
@@ -73,7 +54,7 @@ abstract class AbstractTqCacheTest {
     }
 
     @Test fun cacheAllowsDoNotNullValues() {
-        val cache = createCache<Int, String?>(recordStats = true) {
+        val cache = TqCaffeine<Int, String?>(recordStats = true) {
             when (it % 2 == 0) {
                 true -> it.toString()
                 else -> null
@@ -92,7 +73,7 @@ abstract class AbstractTqCacheTest {
     }
 
     @Test fun maxSizeVerification() {
-        val cache = createCache<Int, Int>(maximumSize = 5, recordStats = true) { it * it }
+        val cache = TqCaffeine<Int, Int>(maximumSize = 5, recordStats = true) { it * it }
         validateStatistics(cache, 0, 0)
         1.rangeTo(5).forEach {
             assertEquals(false, cache.containsKey(it))
@@ -112,37 +93,21 @@ abstract class AbstractTqCacheTest {
             assertEquals(true, cache.containsKey(it))
         }
 
-        assertFalse(cache.containsKey(1))
-        assertFalse(cache.containsKey(2))
-        assertFalse(cache.containsKey(3))
-        assertTrue(cache.containsKey(4))
-        assertTrue(cache.containsKey(5))
-        assertTrue(cache.containsKey(6))
-        assertTrue(cache.containsKey(7))
-        assertTrue(cache.containsKey(8))
+        cache.cleanUp()
+        assertEquals(5, cache.size)
 
         1.rangeTo(4).forEach { assertEquals(it * it, cache[it]) } // 1 erases 4, 2 erases 5, 3 erases 6, 4 erases 7
 
-        println("Round 1: ${cache.keys}")
-        assertTrue(cache.containsKey(1))
-        assertTrue(cache.containsKey(2))
-        assertTrue(cache.containsKey(3))
-        assertTrue(cache.containsKey(4))
-        assertFalse(cache.containsKey(5))
-        assertFalse(cache.containsKey(6))
-        assertFalse(cache.containsKey(7))
-        assertTrue(cache.containsKey(8))
+        cache.cleanUp()
+        assertEquals(5, cache.size)
 
-        8.rangeTo(10).forEach { assertEquals(it * it, cache[it]) } // 8 stays, 9 erases 1, 10 erases 2
-        println("Round 2: ${cache.keys}")
+        8.rangeTo(10).forEach { assertEquals(it * it, cache[it]) } // 8 stays, 9 erases 8, 10 erases 1
 
-        assertFalse(cache.containsKey(7))
-        assertTrue(cache.containsKey(8))
-        assertTrue(cache.containsKey(9))
-        assertTrue(cache.containsKey(10))
+        cache.cleanUp()
+        assertEquals(5, cache.size)
     }
 
-    private fun validateStatistics(cache: TqCacheMap<*, *>, hits: Long, misses: Long) {
+    private fun validateStatistics(cache: TqCaffeine<*, *>, hits: Long, misses: Long) {
         val stats = cache.stats
         assertEquals(hits, stats.hitCount)
         assertEquals(misses, stats.missCount)

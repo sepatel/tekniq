@@ -1,3 +1,8 @@
 This product includes software developed at Spring (https://spring.io/)
-* TqCron is a derivitive of springframework's CronSequenceGenerator.
+* TqCron is a derivative of springframework's CronSequenceGenerator.
 
+This product includes software developed by Ben Manes
+(https://github.com/ben-manes/concurrentlinkedhashmap). The
+io.tekniq.cache.concurrentlinkedhashmap package is a direct copy of the
+code located at the github repo with the package renamed to support the
+embedded use of the library without conflict with external inclusion.

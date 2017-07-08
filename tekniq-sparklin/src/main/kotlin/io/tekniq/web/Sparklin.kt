@@ -102,7 +102,7 @@ private class DefaultRoute(val service: Service, val authorizationManager: Autho
 
     override fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>) {
         @Suppress("UNCHECKED_CAST")
-        val innerHandler: ExceptionHandler = ExceptionHandler { exception, request, response ->
+        val innerHandler: ExceptionHandler<T> = ExceptionHandler { exception, request, response ->
             val pair = handler.invoke(exception as T, request, response)
             response.status(pair.first)
             response.body(defaultResponseTransformer.render(pair.second))
