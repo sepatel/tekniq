@@ -4,6 +4,8 @@ import io.tekniq.rest.TqRestClient
 import org.junit.*
 import org.junit.Assert.*
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 
 private data class MockRequest(val name: String, val age: Int, val created: Date? = Date())
 private data class MockResponse(val color: String, val grade: Int = 42, val found: Date? = Date(), val nullable: String? = null)
@@ -23,6 +25,10 @@ class SparklinTest {
                 post("/spitback") { req, _ ->
                     val mock = req.jsonAs<MockRequest>()
                     MockResponse(mock.name, mock.age, mock.created)
+                }
+                post("/validate/simple") { req, _ ->
+                    required("name").length("name", min = 4, max = 12).stopOnRejections()
+                    req.jsonAs<MockRequest>()
                 }
                 post("/list") { req, _ ->
                     val list = req.jsonAs<List<Int>>()
@@ -88,6 +94,36 @@ class SparklinTest {
     @Test fun noResponseBody() {
         val response = rest.get("http://localhost:9999/blank")
         assertEquals("", response.body)
+    }
+
+    @Test fun basicValidationTesting() {
+        rest.post("http://localhost:9999/validate/simple", MockRequest(name = "Freddy", age = 18)) {
+            assertEquals(200, status)
+        }
+
+        val started = AtomicInteger()
+        val responded = AtomicInteger()
+        val tested = AtomicInteger()
+        val q = mutableListOf<Thread>()
+        for (i in 1..50) {
+            q += thread {
+                started.incrementAndGet()
+                rest.post("http://localhost:9999/validate/simple", MockRequest(name = "F", age = 18)) {
+                    responded.incrementAndGet()
+                    if (status != 400) {
+                        println("Invalid response: $this")
+                    }
+                    assertEquals(400, status)
+                    tested.incrementAndGet()
+                }
+            }
+        }
+
+        q.forEach { it.join() }
+
+        assertEquals(50, tested.get())
+        assertEquals(started.get(), responded.get())
+        assertEquals(responded.get(), tested.get())
     }
 }
 

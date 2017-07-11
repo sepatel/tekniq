@@ -21,7 +21,6 @@ class Sparklin(config: SparklinConfig = SparklinConfig(), routes: SparklinRoute.
         config.staticFiles?.headers?.let { service.staticFiles }
 
         val routeHandler = DefaultRoute(service, config.authorizationManager, config.responseTransformer)
-        routeHandler.before { request, _ -> request.attribute(BODY_CACHE, request.body()) }
         routeHandler.exception(ValidationException::class) { e, _, _ ->
             Pair(400, mapOf("errors" to e.rejections, "data" to e.data).filter { it.value != null })
         }
@@ -102,7 +101,7 @@ private class DefaultRoute(val service: Service, val authorizationManager: Autho
 
     override fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>) {
         @Suppress("UNCHECKED_CAST")
-        val innerHandler: ExceptionHandler<T> = ExceptionHandler { exception, request, response ->
+        val innerHandler: ExceptionHandler = ExceptionHandler { exception, request, response ->
             val pair = handler.invoke(exception as T, request, response)
             response.status(pair.first)
             response.body(defaultResponseTransformer.render(pair.second))
@@ -112,7 +111,7 @@ private class DefaultRoute(val service: Service, val authorizationManager: Autho
 }
 
 private class WebValidation(private val req: Request, private val authorizationManager: AuthorizationManager?) : SparklinValidation({
-    when (req.attribute<String?>(BODY_CACHE).isNullOrBlank()) { // only attempt if there is even anything worth attempting
+    when (req.bodyCached().isNullOrBlank()) { // only attempt if there is even anything worth attempting
         true -> null
         false -> try {
             req.jsonAs<Map<*, *>>()

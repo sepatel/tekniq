@@ -8,7 +8,7 @@ more.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-core:0.6.2"
+compile "io.tekniq:tekniq-core:0.7"
 ```
 
 **Maven Dependency**
@@ -16,9 +16,29 @@ compile "io.tekniq:tekniq-core:0.6.2"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-core</artifactId>
-    <version>0.6.2</version>
+    <version>0.7</version>
 </dependency>
 ```
+
+## [tekniq-cache (click for more info)](https://github.com/sepatel/tekniq/tree/master/tekniq-cache)
+A kotlin friendly wrapper around Caffeine that conforms to the TqCache
+interface making it easy to switch to a more advanced loading cache
+implementation.
+
+**Gradle**
+```
+compile "io.tekniq:tekniq-cache:0.7"
+```
+
+**Maven Dependency**
+```
+<dependency>
+    <groupId>io.tekniq</groupId>
+    <artifactId>tekniq-cache</artifactId>
+    <version>0.7</version>
+</dependency>
+```
+
 
 ## [tekniq-jdbc (click for more info)](https://github.com/sepatel/tekniq/tree/master/tekniq-jdbc)
 Provides extensions to the DataSource and Connection objects allowing
@@ -27,7 +47,7 @@ idiom supported. Does not require overhead of object mappings or such.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-jdbc:0.6.2"
+compile "io.tekniq:tekniq-jdbc:0.7"
 ```
 
 **Maven Dependency**
@@ -35,7 +55,7 @@ compile "io.tekniq:tekniq-jdbc:0.6.2"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-jdbc</artifactId>
-    <version>0.6.2</version>
+    <version>0.7</version>
 </dependency>
 ```
 
@@ -44,7 +64,7 @@ A tool utilizing jackson-mapper for making RESTful calls to web services.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-rest:0.6.2"
+compile "io.tekniq:tekniq-rest:0.7"
 ```
 
 **Maven Dependency**
@@ -52,7 +72,7 @@ compile "io.tekniq:tekniq-rest:0.6.2"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-rest</artifactId>
-    <version>0.6.2</version>
+    <version>0.7</version>
 </dependency>
 ```
 
@@ -64,7 +84,7 @@ body to complex object types, and more.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-sparklin:0.6.2"
+compile "io.tekniq:tekniq-sparklin:0.7"
 ```
 
 **Maven Dependency**
@@ -72,7 +92,7 @@ compile "io.tekniq:tekniq-sparklin:0.6.2"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-sparklin</artifactId>
-    <version>0.6.2</version>
+    <version>0.7</version>
 </dependency>
 ```
 

@@ -6,7 +6,7 @@ body to complex object types, and more.
 
 ## Simple Hello World
 ```kotlin
-Sparklin {
+TqSparklin {
     get("*") { req, resp -> "Hello World" }
 }
 ```
@@ -15,7 +15,7 @@ Sparklin {
 ```kotlin
 private data class MockRequest(val name: String, val age: Int, val created: Date? = Date())
 private data class MockResponse(val color: String, val grade: Int = 42, val found: Date? = Date(), val nullable: String? = null)
-Sparklin(SparklinConfig(port = 9999)) {
+TqSparklin(SparklinConfig(port = 9999)) {
     before { req, res -> res.header("Content-type", "application/json") }
 
     get("/test") { req, res -> MockResponse("purple", found = Date(4200)) }
@@ -28,9 +28,15 @@ Sparklin(SparklinConfig(port = 9999)) {
 
 ## Integrated Validation Framework
 ```kotlin
-Sparklin {
+TqSparklin {
     post("/hello", { req, res ->
-        required("name").string("name").date("birth").stopOnRejections()
+        // generic map validations or data class validations
+        val validation = Validation(req.jsonAs<Map<*,*>>)
+        validation.ifDefined("optionalField") {
+          // do something special
+        }
+        validation.required("name").string("name").date("birth").stopOnRejections()
+        
         val mock = req.jsonAs<MockRequest>()
         mapOf("Input" to mock, "Output" to "It worked")
     })
@@ -39,7 +45,7 @@ Sparklin {
 
 ## Exception Handling
 ```kotlin
-Sparklin {
+TqSparklin {
     exception(Exception::class, { e, req, res ->
         println("Serious exception happened here: ${e.message}")
         e.printStackTrace()
@@ -58,6 +64,13 @@ Sparklin {
 The built-in validation framework makes it easy to determine what authz
 a user has and to lock down the web services appropriately based on the
 permissions. Below is a basic implementation to help convey the concept.
+For this capability, the older Sparklin implementation must be used and
+not the TqSparklin implementation. Sparklin has validation integrated
+into its DSL but that is no longer the preferred way of doing things.
+ 
+A custom authorization on TqSparklin should be utilized for greatest
+level of efficiency for high concurrency applications needing
+performance.
 
 ```kotlin
 object SimpleAuthorizationManager : AuthorizationManager {
@@ -68,18 +81,17 @@ object SimpleAuthorizationManager : AuthorizationManager {
 }
 
 Sparklin(SparklinConfig(authorizationManager = SimpleAuthorizationManager)) {
-    get("/hello", { req, res ->
+    get("/hello") { req, res ->
         // Must have either ANONYMOUS or MOMMY permission
         authz("ANONYMOUS", "MOMMY").stopOnRejections()
         MockResponse("John")
     }
     
-    get("/hello/:name", { req, res ->
+    get("/hello/:name") { req, res ->
         // Must have both ANONYMOUS and MOMMY permissions
         authz(all = true, "ANONYMOUS", "MOMMY").stopOnRejections()
         MockResponse(req.params("name"))
     }
-    
 }
 ```
 
@@ -114,10 +126,9 @@ fun main(args: Array<String>) {
     }
 
     val sparklinConfig = SparklinConfig(
-            authorizationManager = ActiveDirectionAuthorizationManager,
             staticFiles = staticFiles
     )
-    Sparklin(sparklinConfig) {
+    TqSparklin(sparklinConfig) {
         after { req, res -> res.type("application/json") }
 
         handleExceptions(this)
@@ -131,10 +142,9 @@ fun main(args: Array<String>) {
     }
 }
 
-class NotFoundResource(val method: String, val path: String, val params: Map<String, String> = emptyMap()) : Exception() {
-}
+class NotFoundResource(val method: String, val path: String, val params: Map<String, String> = emptyMap()) : Exception() 
 
-fun handleExceptions(route: SparklinRoute) = route.apply {
+fun handleExceptions(route: TqSparklinRoute) = route.apply {
     exception(NotFoundResource::class) { e, req, res ->
         Pair(404, mapOf("errors" to listOf<Rejection>(
                 Rejection("notFound", "${req.requestMethod()} ${req.pathInfo()}")
@@ -147,7 +157,7 @@ fun handleExceptions(route: SparklinRoute) = route.apply {
     }
 }
 
-fun routeLookupServices(route: SparklinRoute) = route.apply {
+fun routeLookupServices(route: TqSparklinRoute) = route.apply {
     get("/lookup/names") { req, resp -> LookupDao.names.values }
     get("/lookup/names/:id") { req, resp -> LookupDao.names[req.params("id")] }
     get("/lookup/orders") { req, resp -> LookupDao.orders.values }
