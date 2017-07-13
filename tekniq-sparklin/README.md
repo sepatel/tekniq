@@ -28,6 +28,22 @@ TqSparklin(SparklinConfig(port = 9999)) {
 
 ## Integrated Validation Framework
 ```kotlin
+Sparklin {
+    post("/hello", { req, res ->
+        ifDefined("optionalField") {
+          // do something special
+        }
+        required("name").string("name").date("birth").stopOnRejections()
+        
+        val mock = req.jsonAs<MockRequest>()
+        mapOf("Input" to mock, "Output" to "It worked")
+    })
+}
+```
+
+or explicit validation utilization
+
+```kotlin
 TqSparklin {
     post("/hello", { req, res ->
         // generic map validations or data class validations
