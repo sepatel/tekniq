@@ -5,7 +5,7 @@ import java.time.*
 import java.util.*
 import java.util.Date
 
-fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit)
+inline fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit)
         = prepareStatement(sql)
         .apply { applyParams(this, *params) }
         .use { stmt ->
@@ -16,7 +16,7 @@ fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> 
             }
         }
 
-fun <T> Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> {
+inline fun <T> Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> {
     val list = mutableListOf<T>()
     prepareStatement(sql)
             .apply { applyParams(this, *params) }
@@ -30,7 +30,7 @@ fun <T> Connection.select(sql: String, vararg params: Any?, action: ResultSet.()
     return list
 }
 
-fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? {
+inline fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? {
     var value: T? = null
     prepareStatement(sql)
             .apply { applyParams(this, *params) }
@@ -68,10 +68,10 @@ fun Connection.insertReturnKey(sql: String, vararg params: Any?): String?
             return answer
         }
 
-fun <T> Connection.call(sql: String, action: CallableStatement.() -> T): T?
+inline fun <T> Connection.call(sql: String, action: CallableStatement.() -> T): T?
         = prepareCall(sql).use { action.invoke(it) }
 
-private fun applyParams(stmt: PreparedStatement, vararg params: Any?) = stmt.apply {
+fun applyParams(stmt: PreparedStatement, vararg params: Any?) = stmt.apply {
     params.forEachIndexed { i, any ->
         when (any) {
             is Time -> setTime(i + 1, any) // is also a java.util.Date so treat naturally instead

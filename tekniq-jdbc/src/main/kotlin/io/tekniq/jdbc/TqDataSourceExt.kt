@@ -3,7 +3,7 @@ package io.tekniq.jdbc
 import java.sql.*
 import javax.sql.DataSource
 
-fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level: Int = Connection.TRANSACTION_READ_COMMITTED, boundary: Connection.() -> T): T? {
+inline fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level: Int = Connection.TRANSACTION_READ_COMMITTED, boundary: Connection.() -> T): T? {
     connection.use { conn ->
         conn.autoCommit = false
         conn.transactionIsolation = level
@@ -15,7 +15,7 @@ fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level: Int = 
     }
 }
 
-fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): T? {
+inline fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): T? {
     connection.use { conn ->
         conn.autoCommit = false
         val x = conn.call(sql, action = action)
@@ -24,10 +24,10 @@ fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): T? {
     }
 }
 
-fun DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit)
+inline fun DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit)
         = connection.use { it.select(sql, *params, action = action) }
 
-fun <T> DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T>
+inline fun <T> DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T>
         = connection.use { it.select(sql, *params, action = action) }
 
 fun <T> DataSource.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T?

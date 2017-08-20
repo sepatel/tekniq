@@ -13,12 +13,8 @@ import javax.sql.DataSource
  * @author Sejal Patel
  */
 open class TqSingleConnectionDataSource(url: String, username: String? = null, password: String? = null, autoCommit: Boolean = true) : DataSource {
-    private val connection: Connection
-
-    init {
-        connection = DriverManager.getConnection(url, username, password).apply {
-            setAutoCommit(autoCommit)
-        }
+    private val connection: Connection = DriverManager.getConnection(url, username, password).apply {
+        setAutoCommit(autoCommit)
     }
 
     fun close() {

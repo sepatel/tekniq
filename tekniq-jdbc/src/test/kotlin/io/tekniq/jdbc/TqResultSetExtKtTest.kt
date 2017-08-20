@@ -5,7 +5,6 @@ import org.junit.Test
 
 class TqResultSetExtKtTest {
     companion object {
-
         val subject = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
             val stmt = createStatement()
             stmt.execute("DROP TABLE spekresult IF EXISTS ")
