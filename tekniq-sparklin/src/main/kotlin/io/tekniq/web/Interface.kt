@@ -1,11 +1,13 @@
 package io.tekniq.web
 
+import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.tekniq.validation.*
 import spark.*
 import spark.utils.SparkUtils
 import java.util.*
+import javax.servlet.http.HttpServletResponse
 import kotlin.reflect.KClass
 
 val sparklinMapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
@@ -27,9 +29,12 @@ interface AuthorizationManager {
     fun getAuthz(request: Request): Collection<String>
 }
 
+@Deprecated("Will be removed when Sparklin is removed")
 interface SparklinRoute {
+    fun halt(status: Int = HttpServletResponse.SC_OK, message: Any? = null): HaltException
     fun before(path: String = SparkUtils.ALL_PATHS, acceptType: String = "*/*", filter: SparklinValidation.(Request, Response) -> Unit)
-    fun after(path: String = SparkUtils.ALL_PATHS, acceptType: String = "*/*", filter: SparklinValidation.(Request, Response) -> Unit)
+    fun after(path: String = SparkUtils.ALL_PATHS, acceptType: String = "*/*", filter: (Request, Response) -> Unit)
+    fun afterAfter(path: String = SparkUtils.ALL_PATHS, filter: (Request, Response) -> Unit)
     fun get(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: SparklinValidation.(Request, Response) -> Any?)
     fun post(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: SparklinValidation.(Request, Response) -> Any?)
     fun put(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: SparklinValidation.(Request, Response) -> Any?)
@@ -40,13 +45,17 @@ interface SparklinRoute {
     fun connect(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: SparklinValidation.(Request, Response) -> Any?)
     fun options(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: SparklinValidation.(Request, Response) -> Any?)
     fun webSocket(path: String, handler: KClass<*>)
+    fun notFound(route: (Request, Response) -> Any?)
+    //fun internalServerError(route: (Request, Response) -> Unit)
 
     fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>)
 }
 
 interface TqSparklinRoute {
+    fun halt(status: Int = HttpServletResponse.SC_OK, message: Any? = null): HaltException
     fun before(path: String = SparkUtils.ALL_PATHS, acceptType: String = "*/*", filter: (Request, Response) -> Unit)
     fun after(path: String = SparkUtils.ALL_PATHS, acceptType: String = "*/*", filter: (Request, Response) -> Unit)
+    fun afterAfter(path: String = SparkUtils.ALL_PATHS, filter: (Request, Response) -> Unit)
     fun get(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: (Request, Response) -> Any?)
     fun post(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: (Request, Response) -> Any?)
     fun put(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: (Request, Response) -> Any?)
@@ -57,6 +66,8 @@ interface TqSparklinRoute {
     fun connect(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: (Request, Response) -> Any?)
     fun options(path: String, acceptType: String = "*/*", transformer: ResponseTransformer? = null, route: (Request, Response) -> Any?)
     fun webSocket(path: String, handler: KClass<*>)
+    fun notFound(route: (Request, Response) -> Any?)
+    //fun internalServerError(route: (Request, Response) -> Unit)
 
     fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>)
 }
@@ -78,7 +89,9 @@ fun <T : Any> Request.jsonAs(type: KClass<T>): T {
 
 inline fun <reified T : Any> Request.jsonAs(): T = jsonAs(T::class)
 
-data class SparklinConfig(
+@Deprecated("Please use TqSparklinConfig instead")
+typealias SparklinConfig = TqSparklinConfig
+data class TqSparklinConfig(
         val ip: String = "0.0.0.0", val port: Int = 4567,
         @Deprecated("Only valid with Sparklin implementation which will be phased out")
         val authorizationManager: AuthorizationManager? = null,
@@ -88,15 +101,52 @@ data class SparklinConfig(
         val keystore: SparklinKeystore? = null,
         val staticFiles: SparklinStaticFiles? = null)
 
-data class SparklinKeystore(val keystoreFile: String, val keystorePassword: String,
-                            val truststoreFile: String, val truststorePassword: String)
+@Deprecated("Please use TqSparklinKeystore instead")
+typealias SparklinKeystore = TqSparklinKeystore
+data class TqSparklinKeystore(val keystoreFile: String, val keystorePassword: String,
+                              val truststoreFile: String, val truststorePassword: String)
 
-data class SparklinStaticFiles(val fileLocation: String? = null, val externalFileLocation: String? = null,
-                               val headers: Map<String, String> = emptyMap(), val expireInSeconds: Int = 1)
+@Deprecated("Please use TqSparklinStaticFiles instead")
+typealias SparklinStaticFiles = TqSparklinStaticFiles
+data class TqSparklinStaticFiles(val fileLocation: String? = null, val externalFileLocation: String? = null,
+                                 val headers: Map<String, String> = emptyMap(), val expireInSeconds: Int = 1)
 
+@Deprecated("Please use TqSparklinValidation instead")
+typealias SparklinValidation = TqSparklinValidation
+abstract class TqSparklinValidation(src: Any?, path: String = "") : TqValidation(src, path) {
+    abstract fun authz(vararg authz: String, all: Boolean = true): TqSparklinValidation
+}
 
-abstract class SparklinValidation(src: Any?, path: String = "") : Validation(src, path) {
-    abstract fun authz(vararg authz: String, all: Boolean = true): SparklinValidation
+open class JsonRequestValidation(private val req: Request, private val authorizationManager: AuthorizationManager? = null) : TqSparklinValidation({
+    when (req.bodyCached().isNullOrBlank()) { // only attempt if there is even anything worth attempting
+        true -> null
+        false -> try {
+            req.jsonAs<Map<*, *>>()
+        } catch (e: JsonMappingException) {
+            null
+        } catch (e: JsonParseException) {
+            null
+        }
+    }
+}()) {
+    override fun authz(vararg authz: String, all: Boolean): SparklinValidation {
+        val userAuthzList = authorizationManager?.getAuthz(req) ?: emptyList()
+        authz.forEach {
+            val contains = userAuthzList.contains(it)
+            if (all && !contains) {
+                throw NotAuthorizedException(mutableListOf(Rejection("unauthorized", it)), all)
+            } else if (!all && contains) {
+                return this
+            }
+        }
+
+        if (!all) {
+            val rejections = mutableListOf<Rejection>()
+            authz.forEach { rejections.add(Rejection("unauthorized", it)) }
+            throw NotAuthorizedException(rejections, all)
+        }
+        return this
+    }
 }
 
 private object JsonResponseTransformer : ResponseTransformer {

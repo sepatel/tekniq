@@ -15,7 +15,7 @@ TqSparklin {
 ```kotlin
 private data class MockRequest(val name: String, val age: Int, val created: Date? = Date())
 private data class MockResponse(val color: String, val grade: Int = 42, val found: Date? = Date(), val nullable: String? = null)
-TqSparklin(SparklinConfig(port = 9999)) {
+TqSparklin(TqSparklinConfig(port = 9999)) {
     before { req, res -> res.header("Content-type", "application/json") }
 
     get("/test") { req, res -> MockResponse("purple", found = Date(4200)) }
@@ -28,30 +28,16 @@ TqSparklin(SparklinConfig(port = 9999)) {
 
 ## Integrated Validation Framework
 ```kotlin
-Sparklin {
-    post("/hello", { req, res ->
-        ifDefined("optionalField") {
-          // do something special
-        }
-        required("name").string("name").date("birth").stopOnRejections()
-        
-        val mock = req.jsonAs<MockRequest>()
-        mapOf("Input" to mock, "Output" to "It worked")
-    })
-}
-```
-
-or explicit validation utilization
-
-```kotlin
 TqSparklin {
     post("/hello", { req, res ->
-        // generic map validations or data class validations
-        val validation = Validation(req.jsonAs<Map<*,*>>)
-        validation.ifDefined("optionalField") {
-          // do something special
-        }
-        validation.required("name").string("name").date("birth").stopOnRejections()
+        JsonRequestValidation(req)
+            .ifDefined("optionalField") {
+                // do something special
+            }
+            .required("name")
+            .string("name")
+            .date("birth")
+            .stopOnRejections()
         
         val mock = req.jsonAs<MockRequest>()
         mapOf("Input" to mock, "Output" to "It worked")
@@ -96,16 +82,20 @@ object SimpleAuthorizationManager : AuthorizationManager {
     }
 }
 
-Sparklin(SparklinConfig(authorizationManager = SimpleAuthorizationManager)) {
+TqSparklin {
     get("/hello") { req, res ->
         // Must have either ANONYMOUS or MOMMY permission
-        authz("ANONYMOUS", "MOMMY").stopOnRejections()
+        JsonRequestValidation(req, SimpleAuthorizationManager)
+            .authz("ANONYMOUS", "MOMMY")
+            .stopOnRejections()
         MockResponse("John")
     }
     
     get("/hello/:name") { req, res ->
         // Must have both ANONYMOUS and MOMMY permissions
-        authz(all = true, "ANONYMOUS", "MOMMY").stopOnRejections()
+        JsonRequestValidation(req, SimpleAuthorizationManager)
+            .authz("ANONYMOUS", "MOMMY", all = true)
+            .stopOnRejections()
         MockResponse(req.params("name"))
     }
 }
@@ -117,11 +107,11 @@ static resource will be sought after via a route mapping before serving
 up a 404 page.
 
 ```kotlin
-val sparklinConfig = SparklinConfig(
+val sparklinConfig = TqSparklinConfig(
         staticFiles = SparklinStaticFiles(externalFileLocation = "src/main/resources/ui")
 )
 
-Sparklin(sparklinConfig) {
+TqSparklin(sparklinConfig) {
     ...
 }
 ```
@@ -134,14 +124,14 @@ your code broken into multiple files as well to help maintain the code.
 ```kotlin
 fun main(args: Array<String>) {
     val config = TqEnvConfig()
-    val staticFiles: SparklinStaticFiles = if (config.get<String>("DEBUG") == "1") {
+    val staticFiles: TqSparklinStaticFiles = if (config.get<String>("DEBUG") == "1") {
         println("DEBUG mode detected. Live reloading of UI resources")
-        SparklinStaticFiles(externalFileLocation = "src/main/resources/ui")
+        TqSparklinStaticFiles(externalFileLocation = "src/main/resources/ui")
     } else {
-        SparklinStaticFiles(fileLocation = "/ui")
+        TqSparklinStaticFiles(fileLocation = "/ui")
     }
 
-    val sparklinConfig = SparklinConfig(
+    val sparklinConfig = TqSparklinConfig(
             staticFiles = staticFiles
     )
     TqSparklin(sparklinConfig) {

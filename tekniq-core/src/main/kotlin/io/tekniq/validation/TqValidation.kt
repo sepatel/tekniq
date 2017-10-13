@@ -17,7 +17,9 @@ open class ValidationException(val rejections: Collection<Rejection>, val data: 
         }
 }
 
-open class Validation(val src: Any?, val path: String = "") {
+@Deprecated("Please use TqValidation as Validation will be removed")
+typealias Validation = TqValidation
+open class TqValidation(val src: Any?, val path: String = "") {
     val rejections = mutableListOf<Rejection>()
     var tested = 0
     var passed = 0

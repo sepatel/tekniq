@@ -7,13 +7,13 @@ import java.util.*
 
 private data class PojoTestBean(val id: String, val name: String?, val weight: Float?, val birthday: Date?, val extra: Boolean, val nullable: Boolean?)
 
-class ValidationTest {
-    private lateinit var pojoBased: Validation
-    private lateinit var mapBased: Validation
+class TqValidationTest {
+    private lateinit var pojoBased: TqValidation
+    private lateinit var mapBased: TqValidation
 
     @Before fun setup() {
-        pojoBased = Validation(PojoTestBean("42", "Bob", 140.6f, Date(), true, null))
-        mapBased = Validation(mapOf(
+        pojoBased = TqValidation(PojoTestBean("42", "Bob", 140.6f, Date(), true, null))
+        mapBased = TqValidation(mapOf(
                 "id" to "42",
                 "name" to "Bob",
                 "weight" to 140.6f,
@@ -31,7 +31,7 @@ class ValidationTest {
 
     @Test fun ifDefinedWithPojo() = ifDefinedBase(pojoBased)
     @Test fun ifDefinedWithMap() = ifDefinedBase(mapBased)
-    private fun ifDefinedBase(validation: Validation) {
+    private fun ifDefinedBase(validation: TqValidation) {
         assertEquals(0, validation.tested)
         assertEquals(0, validation.passed)
         assertEquals(0, validation.rejections.size)
@@ -53,7 +53,7 @@ class ValidationTest {
 
     @Test fun ifNotDefinedWithPojo() = ifNotDefinedBase(pojoBased)
     @Test fun ifNotDefinedWithMap() = ifNotDefinedBase(mapBased)
-    private fun ifNotDefinedBase(validation: Validation) {
+    private fun ifNotDefinedBase(validation: TqValidation) {
         assertEquals(0, validation.tested)
         assertEquals(0, validation.passed)
         assertEquals(0, validation.rejections.size)
@@ -82,7 +82,7 @@ class ValidationTest {
     @Test fun numberWithPojo() = numberBase(pojoBased)
     @Test fun numberWithMap() = numberBase(mapBased)
 
-    private fun numberBase(validation: Validation) {
+    private fun numberBase(validation: TqValidation) {
         assertEquals(0, validation.tested)
         assertEquals(0, validation.passed)
         assertEquals(0, validation.rejections.size)

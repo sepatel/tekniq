@@ -2,10 +2,9 @@ package io.tekniq.web
 
 import io.tekniq.validation.ValidationException
 import spark.*
-import javax.servlet.http.HttpServletResponse
 import kotlin.reflect.KClass
 
-class TqSparklin(config: SparklinConfig = SparklinConfig(), routes: TqSparklinRoute.() -> Unit) {
+class TqSparklin(config: TqSparklinConfig = TqSparklinConfig(), routes: TqSparklinRoute.() -> Unit) {
     private val service: Service = Service.ignite()
 
     init {
@@ -22,82 +21,88 @@ class TqSparklin(config: SparklinConfig = SparklinConfig(), routes: TqSparklinRo
         routeHandler.exception(ValidationException::class) { e, _, _ ->
             Pair(400, mapOf("errors" to e.rejections, "data" to e.data).filter { it.value != null })
         }
-        routes.invoke(routeHandler)
+        routes(routeHandler)
 
         service.init()
     }
 
     fun awaitInitialization() = service.awaitInitialization()
-    fun halt(status: Int = HttpServletResponse.SC_OK, message: String? = null) = service.halt(status, message)
     fun stop() = service.stop()
 }
 
 private class DefaultSparklinRoute(val service: Service, val defaultResponseTransformer: ResponseTransformer) : TqSparklinRoute {
-    override fun before(path: String, acceptType: String, filter: (Request, Response) -> Unit) {
-        val innerFilter = Filter { req, res -> filter.invoke(req, res) }
-        service.before(path, acceptType, innerFilter)
-    }
+    override fun halt(status: Int, message: Any?): HaltException = service.halt(status, defaultResponseTransformer.render(message))
 
-    override fun after(path: String, acceptType: String, filter: (Request, Response) -> Unit) {
-        val innerFilter = Filter { req, res -> filter.invoke(req, res) }
-        service.after(path, acceptType, innerFilter)
-    }
+    override fun before(path: String, acceptType: String, filter: (Request, Response) -> Unit) =
+            service.before(path, acceptType) { req, res -> filter(req, res) }
+
+    override fun after(path: String, acceptType: String, filter: (Request, Response) -> Unit) =
+            service.after(path, acceptType) { req, res -> filter(req, res) }
+
+    override fun afterAfter(path: String, filter: (Request, Response) -> Unit) =
+            service.afterAfter(path) { req, res -> filter(req, res) }
 
     override fun get(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.get(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun post(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.post(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun put(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.put(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun patch(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.patch(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun delete(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.delete(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun head(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.head(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun trace(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.trace(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun connect(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.connect(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun options(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route.invoke(req, res) }
+        val innerRoute = Route { req, res -> route(req, res) }
         service.options(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
     }
 
     override fun webSocket(path: String, handler: KClass<*>) = service.webSocket(path, handler.java)
 
+    override fun notFound(route: (Request, Response) -> Any?) = service.notFound { req, res ->
+        defaultResponseTransformer.render(route(req, res))
+    }
+
+    /* override fun internalServerError(route: (Request, Response) -> Unit) = service.internalServerError { req, res ->
+        route(req, res)
+    } */
+
     override fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>) {
-        @Suppress("UNCHECKED_CAST")
-        val innerHandler: ExceptionHandler = ExceptionHandler { exception, request, response ->
-            val pair = handler.invoke(exception as T, request, response)
+        service.exception(exceptionClass.java) { exception, request, response ->
+            val pair = handler(exception as T, request, response)
             response.status(pair.first)
             response.body(defaultResponseTransformer.render(pair.second))
         }
-        service.exception(exceptionClass.java, innerHandler)
     }
 }
 
