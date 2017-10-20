@@ -66,13 +66,6 @@ TqSparklin {
 The built-in validation framework makes it easy to determine what authz
 a user has and to lock down the web services appropriately based on the
 permissions. Below is a basic implementation to help convey the concept.
-For this capability, the older Sparklin implementation must be used and
-not the TqSparklin implementation. Sparklin has validation integrated
-into its DSL but that is no longer the preferred way of doing things.
- 
-A custom authorization on TqSparklin should be utilized for greatest
-level of efficiency for high concurrency applications needing
-performance.
 
 ```kotlin
 object SimpleAuthorizationManager : AuthorizationManager {

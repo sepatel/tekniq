@@ -21,6 +21,13 @@ class TqSparklin(config: TqSparklinConfig = TqSparklinConfig(), routes: TqSparkl
         routeHandler.exception(ValidationException::class) { e, _, _ ->
             Pair(400, mapOf("errors" to e.rejections, "data" to e.data).filter { it.value != null })
         }
+        routeHandler.exception(NotAuthorizedException::class) { e, _, _ ->
+            Pair(401, mapOf("errors" to e.rejections, "type" to if (e.all) {
+                "ALL"
+            } else {
+                "OR"
+            }))
+        }
         routes(routeHandler)
 
         service.init()

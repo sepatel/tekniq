@@ -29,16 +29,16 @@ Can either act upon or return a list of transformed results found
 
 ```kotlin
 // datasource will obtain connection, execute query, and release connection
-val people = ds.select("SELECT name, age FROM person") {
+val people = ds.select<Person>("SELECT name, age FROM person") {
   Person(getString("name"), getInt("age"))
 }
 
-// connection will execute query only
-val person = conn.select("SELECT name, age FROM person") {
+// connection will execute query
+val person = conn.select<Person>("SELECT name, age FROM person") {
   Person(getString("name"), getInt("age"))
 }
 
-// select without returning a list also available on connection level
+// select without returning a list also available
 // not building objects or a list to be returned
 ds.select("SELECT name, age FROM person") {
   log("${getString("name")} is ${getint("age")} years old")
@@ -72,7 +72,7 @@ conn.call("{CALL foo.my_custom_pkg.method_name(?, ?, ?)}") {
 }
 
 // String returned
-val star = conn.call("{CALL foo.my_custom_pkg.method_name(?, ?, ?)}") {
+val star = conn.call<String>("{CALL foo.my_custom_pkg.method_name(?, ?, ?)}") {
   setString("p_name", "John")
   setAge("p_age", 42)
   registerOutParameter("x_star_sign", Types.VARCHAR)
