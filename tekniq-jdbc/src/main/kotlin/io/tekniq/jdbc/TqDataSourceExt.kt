@@ -7,20 +7,33 @@ inline fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level:
     connection.use { conn ->
         conn.autoCommit = false
         conn.transactionIsolation = level
-        val result = boundary.invoke(conn)
-        if (commitOnCompletion) {
-            conn.commit()
+        try {
+            val result = boundary(conn)
+            if (commitOnCompletion) {
+                conn.commit()
+            }
+            return result
+        } catch (e: Exception) {
+            if (commitOnCompletion) {
+                // control over commit/rollback is being handled externally
+                conn.rollback()
+            }
+            throw e
         }
-        return result
     }
 }
 
 inline fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): T? {
     connection.use { conn ->
         conn.autoCommit = false
-        val x = conn.call(sql, action = action)
-        conn.commit()
-        return x
+        try {
+            val x = conn.call(sql, action = action)
+            conn.commit()
+            return x
+        } catch (e: Exception) {
+            conn.rollback()
+            throw e
+        }
     }
 }
 
@@ -38,9 +51,14 @@ fun DataSource.insert(sql: String, vararg params: Any?): Int = update(sql, *para
 fun DataSource.update(sql: String, vararg params: Any?): Int {
     connection.use { conn ->
         conn.autoCommit = false
-        val effected = conn.update(sql, *params)
-        conn.commit()
-        return effected
+        try {
+            val effected = conn.update(sql, *params)
+            conn.commit()
+            return effected
+        } catch (e: Exception) {
+            conn.rollback()
+            throw e
+        }
     }
 }
 
