@@ -3,16 +3,16 @@ package io.tekniq.validation
 import java.util.*
 import java.util.regex.Pattern
 
-private val EMAIL_PATTERN = Pattern.compile("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@" + "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\\b")
+private val emailPattern = Pattern.compile("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@" + "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\\b")
 
 data class Rejection(val code: String, val field: String? = null, val message: String? = null)
 open class ValidationException(val rejections: Collection<Rejection>, val data: Any? = null) : Exception() {
     override val message: String?
         get() = rejections.joinToString {
-            if (it.field != null) {
-                "${it.code}.${it.field}"
-            } else {
-                it.code
+            when {
+                it.message != null -> it.message
+                it.field != null -> "${it.code}.${it.field}"
+                else -> it.code
             }
         }
 }
@@ -24,8 +24,8 @@ open class TqValidation(val src: Any?, val path: String = "") {
     var tested = 0
     var passed = 0
 
-    fun and(check: Validation.() -> Unit): Validation {
-        val validation = Validation(src)
+    fun and(check: TqValidation.() -> Unit): TqValidation {
+        val validation = TqValidation(src)
         check(validation)
 
         if (validation.rejections.size > 0) {
@@ -40,8 +40,8 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return this
     }
 
-    fun or(check: Validation.() -> Unit): Validation {
-        val validation = Validation(src)
+    fun or(check: TqValidation.() -> Unit): TqValidation {
+        val validation = TqValidation(src)
         check(validation)
 
         if (validation.passed == 0) {
@@ -56,32 +56,32 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return this
     }
 
-    fun merge(vararg validations: Validation): Validation {
+    fun merge(vararg validations: TqValidation): TqValidation {
         validations.forEach { rejections.addAll(it.rejections) }
         return this
     }
 
-    fun reject(code: String, field: String? = null, message: String? = null): Validation {
+    fun reject(code: String, field: String? = null, message: String? = null): TqValidation {
         rejections.add(Rejection(code, fieldPath(field), message))
         return this
     }
 
-    fun ifDefined(field: String, action: () -> Unit): Validation {
+    fun ifDefined(field: String, action: () -> Unit): TqValidation {
         if (src == null) {
             return this
         }
 
         var value = src
         field.split('.').forEach {
-            if (value == null) {
-                return this
-            } else if (value is Map<*, *>) {
-                if (!(value as Map<*, *>).containsKey(it)) {
-                    return this
+            when (value) {
+                null -> return this
+                is Map<*, *> -> {
+                    if (!(value as Map<*, *>).containsKey(it)) {
+                        return this
+                    }
+                    value = (value as Map<*, *>)[it]
                 }
-                value = (value as Map<*, *>)[it]
-            } else {
-                try {
+                else -> try {
                     value!!.javaClass.getMethod("get" + it.capitalize()).let {
                         it.isAccessible = true
                         value = it.invoke(value)
@@ -97,7 +97,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
     }
 
     // TODO: Is there a cleaner way to reverse the ifDefined logic for this implementation instead?
-    fun ifNotDefined(field: String, action: () -> Unit): Validation {
+    fun ifNotDefined(field: String, action: () -> Unit): TqValidation {
         if (src == null) {
             action.invoke()
             return this
@@ -105,17 +105,19 @@ open class TqValidation(val src: Any?, val path: String = "") {
 
         var value = src
         field.split('.').forEach {
-            if (value == null) {
-                action.invoke()
-                return this
-            } else if (value is Map<*, *>) {
-                if (!(value as Map<*, *>).containsKey(it)) {
+            when (value) {
+                null -> {
                     action.invoke()
                     return this
                 }
-                value = (value as Map<*, *>)[it]
-            } else {
-                try {
+                is Map<*, *> -> {
+                    if (!(value as Map<*, *>).containsKey(it)) {
+                        action.invoke()
+                        return this
+                    }
+                    value = (value as Map<*, *>)[it]
+                }
+                else -> try {
                     value!!.javaClass.getMethod("get" + it.capitalize()).let {
                         it.isAccessible = true
                         value = it.invoke(value)
@@ -130,7 +132,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return this
     }
 
-    fun required(field: String? = null): Validation = test(field, "required") {
+    fun required(field: String? = null): TqValidation = test(field, "required") {
         if (it == null) {
             return@test false
         }
@@ -144,7 +146,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun requiredOrNull(field: String? = null): Validation = test(field, "required") {
+    fun requiredOrNull(field: String? = null): TqValidation = test(field, "required") {
         if (it is String && it.trim().isEmpty()) {
             return@test false
         } else if (it is Collection<*>) {
@@ -154,18 +156,18 @@ open class TqValidation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun date(field: String? = null): Validation = test(field, "invalidDate") {
+    fun date(field: String? = null): TqValidation = test(field, "invalidDate") {
         return@test (it == null || it is Date)
     }
 
-    fun email(field: String? = null): Validation = test(field, "invalidEmail") {
+    fun email(field: String? = null): TqValidation = test(field, "invalidEmail") {
         if (it !is String) {
             return@test false
         }
-        return@test EMAIL_PATTERN.matcher(it.trim().toLowerCase()).matches()
+        return@test emailPattern.matcher(it.trim().toLowerCase()).matches()
     }
 
-    fun length(field: String? = null, min: Int? = null, max: Int? = null): Validation = test(field, "invalidLength") {
+    fun length(field: String? = null, min: Int? = null, max: Int? = null): TqValidation = test(field, "invalidLength") {
         if (it !is String) {
             return@test false
         }
@@ -178,15 +180,15 @@ open class TqValidation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun number(field: String? = null): Validation = test(field, "invalidNumber") {
+    fun number(field: String? = null): TqValidation = test(field, "invalidNumber") {
         return@test (it == null || it is Number)
     }
 
-    fun string(field: String? = null): Validation = test(field, "invalidString") {
+    fun string(field: String? = null): TqValidation = test(field, "invalidString") {
         return@test (it == null || it is String)
     }
 
-    fun arrayOf(field: String? = null, check: Validation.() -> Unit): Validation = test(field, "invalidArray") {
+    fun arrayOf(field: String? = null, check: TqValidation.() -> Unit): TqValidation = test(field, "invalidArray") {
         if (it !is List<*>) {
             return@test false
         }
@@ -197,7 +199,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
                 name += '.'
             }
 
-            val validation = Validation(element, name + i)
+            val validation = TqValidation(element, name + i)
             check(validation)
             rejections.addAll(validation.rejections)
         }
@@ -206,14 +208,14 @@ open class TqValidation(val src: Any?, val path: String = "") {
 
     inline fun stop(data: Any? = null): Nothing = throw ValidationException(rejections, data)
 
-    fun stopOnRejections(data: Any? = null): Validation {
+    fun stopOnRejections(data: Any? = null): TqValidation {
         if (rejections.size > 0) {
             throw ValidationException(rejections, data)
         }
         return this
     }
 
-    open protected fun test(field: String?, code: String, check: (Any?) -> Boolean): Validation {
+    open protected fun test(field: String?, code: String, check: (Any?) -> Boolean): TqValidation {
         if (src == null) {
             rejections.add(Rejection(code, fieldPath(field)))
             return this
@@ -246,16 +248,15 @@ open class TqValidation(val src: Any?, val path: String = "") {
             return src
         }
         var value = src
-        field.split('.').forEach {
+        field.split('.').forEach { key ->
             if (value is Map<*, *>) {
-                val key = it
                 value.javaClass.getMethod("get", Any::class.java).let {
                     it.isAccessible = true
                     value = it.invoke(value, key) ?: return null
                 }
             } else {
                 try {
-                    value.javaClass.getMethod("get" + it.capitalize()).let {
+                    value.javaClass.getMethod("get" + key.capitalize()).let {
                         it.isAccessible = true
                         value = it.invoke(value) ?: return null
                     }
