@@ -35,7 +35,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
                 }
 
                 it.code
-            }, "\$and", path))
+            }, "\$and"))
         }
         return this
     }
@@ -51,7 +51,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
                 }
 
                 it.code
-            }, "\$or", path))
+            }, "\$or"))
         }
         return this
     }
