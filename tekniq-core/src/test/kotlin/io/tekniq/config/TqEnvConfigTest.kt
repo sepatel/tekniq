@@ -5,9 +5,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class TqEnvConfigTest {
-    val subject = TqEnvConfig()
+    private val subject = TqEnvConfig()
 
-    @Test fun naturlaBehavior() {
+    @Test fun naturalBehavior() {
         Assert.assertTrue(subject.keys.size > 10)
 
         System.getenv().forEach {

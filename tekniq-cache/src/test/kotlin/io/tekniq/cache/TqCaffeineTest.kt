@@ -41,7 +41,7 @@ class TqCaffeineTest {
         1.rangeTo(20).forEach { i ->
             // spawn 20 threads
             threads.add(thread {
-                1.rangeTo(100).forEach { x ->
+                1.rangeTo(100).forEach { _ ->
                     // each thread hits 100 times
                     val answer = cache[i.toString()]
                     assertEquals(i, answer) // seed the cache
