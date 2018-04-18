@@ -93,8 +93,9 @@ data class TqResponse(val status: Int, val body: String, private val headers: Ma
         }
     }
 
-    inline fun <reified T : Any> jsonAs(): T = jsonAs(T::class)
-    fun <T : Any> jsonAs(type: KClass<T>): T = mapper.readValue(body, type.java)
+    inline fun <reified T : Any> jsonAs(): T = jsonAsNullable(T::class)!!
+    inline fun <reified T : Any> jsonAsNullable(): T? = jsonAsNullable(T::class)
+    fun <T : Any> jsonAsNullable(type: KClass<T>): T? = mapper.readValue(body, type.java)
 }
 
 data class RestLog(val method: String, val url: String, val ts: Date = Date(), val duration: Long = 0, val request: String? = null, val status: Int = 0, val response: String? = null)

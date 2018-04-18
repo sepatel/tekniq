@@ -79,15 +79,15 @@ fun Request.bodyCached(): String? {
     return attribute(BODY_CACHE)
 }
 
-fun <T : Any> Request.jsonAs(type: KClass<T>): T {
+inline fun <reified T : Any> Request.jsonAs(): T = jsonAsNullable(T::class)!!
+inline fun <reified T : Any> Request.jsonAsNullable(): T? = jsonAsNullable(T::class)
+fun <T : Any> Request.jsonAsNullable(type: KClass<T>): T? {
     val body = this.bodyCached()
     if (body.isNullOrBlank()) {
         throw IllegalStateException("No data available to transform")
     }
     return sparklinMapper.readValue(body, type.java)
 }
-
-inline fun <reified T : Any> Request.jsonAs(): T = jsonAs(T::class)
 
 @Deprecated("Please use TqSparklinConfig instead")
 typealias SparklinConfig = TqSparklinConfig
