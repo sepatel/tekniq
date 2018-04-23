@@ -19,12 +19,13 @@ open class ValidationException(val rejections: Collection<Rejection>, val data: 
 
 @Deprecated("Please use TqValidation as Validation will be removed")
 typealias Validation = TqValidation
+
 open class TqValidation(val src: Any?, val path: String = "") {
     val rejections = mutableListOf<Rejection>()
     var tested = 0
     var passed = 0
 
-    fun and(check: TqValidation.() -> Unit): TqValidation {
+    fun and(message: String? = null, check: TqValidation.() -> Unit): TqValidation {
         val validation = TqValidation(src)
         check(validation)
 
@@ -35,12 +36,12 @@ open class TqValidation(val src: Any?, val path: String = "") {
                 }
 
                 it.code
-            }, "\$and"))
+            }, "\$and", message))
         }
         return this
     }
 
-    fun or(check: TqValidation.() -> Unit): TqValidation {
+    fun or(message: String? = null, check: TqValidation.() -> Unit): TqValidation {
         val validation = TqValidation(src)
         check(validation)
 
@@ -51,7 +52,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
                 }
 
                 it.code
-            }, "\$or"))
+            }, "\$or", message))
         }
         return this
     }
@@ -132,7 +133,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return this
     }
 
-    fun required(field: String? = null): TqValidation = test(field, "required") {
+    fun required(field: String? = null, message: String? = null): TqValidation = test(field, "required", message) {
         if (it == null) {
             return@test false
         }
@@ -146,7 +147,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun requiredOrNull(field: String? = null): TqValidation = test(field, "required") {
+    fun requiredOrNull(field: String? = null, message: String? = null): TqValidation = test(field, "required", message) {
         if (it is String && it.trim().isEmpty()) {
             return@test false
         } else if (it is Collection<*>) {
@@ -156,18 +157,18 @@ open class TqValidation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun date(field: String? = null): TqValidation = test(field, "invalidDate") {
+    fun date(field: String? = null, message: String? = null): TqValidation = test(field, "invalidDate", message) {
         return@test (it == null || it is Date)
     }
 
-    fun email(field: String? = null): TqValidation = test(field, "invalidEmail") {
+    fun email(field: String? = null, message: String? = null): TqValidation = test(field, "invalidEmail", message) {
         if (it !is String) {
             return@test false
         }
         return@test emailPattern.matcher(it.trim().toLowerCase()).matches()
     }
 
-    fun length(field: String? = null, min: Int? = null, max: Int? = null): TqValidation = test(field, "invalidLength") {
+    fun length(field: String? = null, message: String? = null, min: Int? = null, max: Int? = null): TqValidation = test(field, "invalidLength", message) {
         if (it !is String) {
             return@test false
         }
@@ -180,15 +181,15 @@ open class TqValidation(val src: Any?, val path: String = "") {
         true
     }
 
-    fun number(field: String? = null): TqValidation = test(field, "invalidNumber") {
+    fun number(field: String? = null, message: String? = null): TqValidation = test(field, "invalidNumber", message) {
         return@test (it == null || it is Number)
     }
 
-    fun string(field: String? = null): TqValidation = test(field, "invalidString") {
+    fun string(field: String? = null, message: String? = null): TqValidation = test(field, "invalidString", message) {
         return@test (it == null || it is String)
     }
 
-    fun arrayOf(field: String? = null, check: TqValidation.() -> Unit): TqValidation = test(field, "invalidArray") {
+    fun arrayOf(field: String? = null, message: String? = null, check: TqValidation.() -> Unit): TqValidation = test(field, "invalidArray", message) {
         if (it !is List<*>) {
             return@test false
         }
@@ -215,9 +216,9 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return this
     }
 
-    open protected fun test(field: String?, code: String, check: (Any?) -> Boolean): TqValidation {
+    protected open fun test(field: String?, code: String, message: String?, check: (Any?) -> Boolean): TqValidation {
         if (src == null) {
-            rejections.add(Rejection(code, fieldPath(field)))
+            rejections.add(Rejection(code, fieldPath(field), message))
             return this
         }
 
@@ -227,7 +228,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
         if (validationCheckResult) {
             passed++
         } else {
-            rejections.add(Rejection(code, fieldPath(field)))
+            rejections.add(Rejection(code, fieldPath(field), message))
         }
 
         return this

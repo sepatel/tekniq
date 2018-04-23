@@ -24,6 +24,14 @@ class TqValidationTest {
     }
 
     @Test fun and() {
+        pojoBased.and() {
+            required("name")
+            required("monkey", "I'm a purple monkey")
+            required("normal")
+        }
+        println(pojoBased.rejections)
+        assertEquals(0, pojoBased.passed)
+        assertEquals("", pojoBased.rejections.toString())
     }
 
     @Test fun or() {
