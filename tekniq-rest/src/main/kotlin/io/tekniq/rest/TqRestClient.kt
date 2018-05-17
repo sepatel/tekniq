@@ -41,7 +41,7 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
     }
 
     open fun transform(json: Any?) = when (json) {
-        is String, is Number, is Boolean -> toString()
+        is String, is Number, is Boolean -> json.toString()
         else -> mapper.writeValueAsString(json)
     }
 

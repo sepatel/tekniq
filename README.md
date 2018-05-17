@@ -8,7 +8,7 @@ more.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-core:0.9"
+compile "io.tekniq:tekniq-core:0.9.1"
 ```
 
 **Maven Dependency**
@@ -16,7 +16,7 @@ compile "io.tekniq:tekniq-core:0.9"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-core</artifactId>
-    <version>0.9</version>
+    <version>0.9.1</version>
 </dependency>
 ```
 
@@ -27,7 +27,7 @@ implementation.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-cache:0.9"
+compile "io.tekniq:tekniq-cache:0.9.1"
 ```
 
 **Maven Dependency**
@@ -35,7 +35,7 @@ compile "io.tekniq:tekniq-cache:0.9"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-cache</artifactId>
-    <version>0.9</version>
+    <version>0.9.1</version>
 </dependency>
 ```
 
@@ -47,7 +47,7 @@ idiom supported. Does not require overhead of object mappings or such.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-jdbc:0.9"
+compile "io.tekniq:tekniq-jdbc:0.9.1"
 ```
 
 **Maven Dependency**
@@ -55,7 +55,7 @@ compile "io.tekniq:tekniq-jdbc:0.9"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-jdbc</artifactId>
-    <version>0.9</version>
+    <version>0.9.1</version>
 </dependency>
 ```
 
@@ -64,7 +64,7 @@ A tool utilizing jackson-mapper for making RESTful calls to web services.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-rest:0.9"
+compile "io.tekniq:tekniq-rest:0.9.1"
 ```
 
 **Maven Dependency**
@@ -72,7 +72,7 @@ compile "io.tekniq:tekniq-rest:0.9"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-rest</artifactId>
-    <version>0.9</version>
+    <version>0.9.1</version>
 </dependency>
 ```
 
@@ -84,7 +84,7 @@ body to complex object types, and more.
 
 **Gradle**
 ```
-compile "io.tekniq:tekniq-sparklin:0.9"
+compile "io.tekniq:tekniq-sparklin:0.9.1"
 ```
 
 **Maven Dependency**
@@ -92,7 +92,7 @@ compile "io.tekniq:tekniq-sparklin:0.9"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-sparklin</artifactId>
-    <version>0.9</version>
+    <version>0.9.1</version>
 </dependency>
 ```
 
