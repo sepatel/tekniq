@@ -117,7 +117,7 @@ abstract class TqSparklinValidation(src: Any?, path: String = "") : TqValidation
     abstract fun authz(vararg authz: String, all: Boolean = true): TqSparklinValidation
 }
 
-data class JsonRequestValidation(private val req: Request, private val authorizationManager: AuthorizationManager? = null) : TqSparklinValidation({
+open class JsonRequestValidation(private val req: Request, private val authorizationManager: AuthorizationManager? = null) : TqSparklinValidation({
     when (req.bodyCached().isNullOrBlank()) { // only attempt if there is even anything worth attempting
         true -> null
         false -> try {
