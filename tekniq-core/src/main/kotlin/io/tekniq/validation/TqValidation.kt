@@ -190,7 +190,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
     }
 
     fun arrayOf(field: String? = null, message: String? = null, check: TqValidation.() -> Unit): TqValidation = test(field, "invalidArray", message) {
-        if (it !is List<*>) {
+        if (it !is Iterable<*>) {
             return@test false
         }
 
