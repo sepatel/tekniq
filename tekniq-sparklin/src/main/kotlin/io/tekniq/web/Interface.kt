@@ -152,6 +152,7 @@ open class JsonRequestValidation(private val req: Request, private val authoriza
 private object JsonResponseTransformer : ResponseTransformer {
     override fun render(model: Any?): String = when (model) {
         is Unit -> ""
+        is Iterable<*> -> sparklinMapper.writeValueAsString(model.toList())
         else -> sparklinMapper.writeValueAsString(model)
     }
 }
