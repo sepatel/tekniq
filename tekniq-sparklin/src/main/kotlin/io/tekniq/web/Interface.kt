@@ -7,6 +7,7 @@ import io.tekniq.validation.*
 import spark.*
 import spark.utils.SparkUtils
 import java.util.*
+import java.util.concurrent.Future
 import javax.servlet.http.HttpServletResponse
 import kotlin.reflect.KClass
 
@@ -151,6 +152,7 @@ open class JsonRequestValidation(private val req: Request, private val authoriza
 
 private object JsonResponseTransformer : ResponseTransformer {
     override fun render(model: Any?): String = when (model) {
+        is Future<*> -> render(model.get())
         is Unit -> ""
         is Iterable<*> -> sparklinMapper.writeValueAsString(model.toList())
         else -> sparklinMapper.writeValueAsString(model)

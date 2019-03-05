@@ -49,60 +49,38 @@ private class DefaultSparklinRoute(val service: Service, val defaultResponseTran
     override fun afterAfter(path: String, filter: (Request, Response) -> Unit) =
             service.afterAfter(path) { req, res -> filter(req, res) }
 
-    override fun get(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.get(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun get(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.get(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun post(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.post(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun post(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.post(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun put(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.put(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun put(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.put(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun patch(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.patch(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun patch(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.patch(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun delete(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.delete(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun delete(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.delete(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun head(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.head(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun head(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.head(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun trace(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.trace(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun trace(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.trace(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun connect(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.connect(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun connect(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.connect(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
-    override fun options(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) {
-        val innerRoute = Route { req, res -> route(req, res) }
-        service.options(path, acceptType, innerRoute, transformer ?: defaultResponseTransformer)
-    }
+    override fun options(path: String, acceptType: String, transformer: ResponseTransformer?, route: (Request, Response) -> Any?) =
+            service.options(path, acceptType, Route(route), transformer ?: defaultResponseTransformer)
 
     override fun webSocket(path: String, handler: KClass<*>) = service.webSocket(path, handler.java)
 
     override fun notFound(route: (Request, Response) -> Any?) = service.notFound { req, res ->
         defaultResponseTransformer.render(route(req, res))
     }
-
-    /* override fun internalServerError(route: (Request, Response) -> Unit) = service.internalServerError { req, res ->
-        route(req, res)
-    } */
 
     override fun <T : Exception> exception(exceptionClass: KClass<T>, handler: (T, Request, Response) -> Pair<Int, Any>) {
         service.exception(exceptionClass.java) { exception, request, response ->
