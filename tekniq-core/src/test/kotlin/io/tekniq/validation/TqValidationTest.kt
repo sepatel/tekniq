@@ -5,7 +5,7 @@ import org.junit.Before
 import org.junit.Test
 import java.util.*
 
-private data class PojoTestBean(val id: String, val name: String?, val weight: Float?, val birthday: Date?, val extra: Boolean, val nullable: Boolean?, val list: List<ListItem> = emptyList(), val set: Set<ListItem> = emptySet())
+private data class PojoTestBean(val id: String, val name: String?, val weight: Float?, val birthday: Date?, val extra: Boolean, val nullable: Boolean?, val list: List<ListItem> = emptyList(), val set: Set<ListItem> = emptySet(), val emails: List<String> = emptyList())
 private data class ListItem(val id: Int, val text: String)
 
 class TqValidationTest {
@@ -16,7 +16,8 @@ class TqValidationTest {
     fun setup() {
         pojoBased = TqValidation(PojoTestBean("42", "Bob", 140.6f, Date(), true, null,
                 list = listOf(ListItem(1, "One"), ListItem(2, "Two")),
-                set = setOf(ListItem(3, "Three"), ListItem(4, "Four"))
+                set = setOf(ListItem(3, "Three"), ListItem(4, "Four")),
+                emails = listOf("here@example.com", "broken@example..com")
         ))
         mapBased = TqValidation(mapOf(
                 "id" to "42",
@@ -26,7 +27,8 @@ class TqValidationTest {
                 "extra" to true,
                 "nullable" to null,
                 "list" to listOf(ListItem(1, "One"), ListItem(2, "Two")),
-                "set" to setOf(ListItem(3, "Three"), ListItem(4, "Four"))
+                "set" to setOf(ListItem(3, "Three"), ListItem(4, "Four")),
+                "emails" to listOf("here@example.com", "broken@example..com")
         ))
     }
 
@@ -156,6 +158,22 @@ class TqValidationTest {
             assertEquals(validation.rejections.toString(), 0, validation.rejections.size)
             assertEquals(2, validation.tested)
             assertEquals(2, validation.passed)
+        }
+    }
+
+    @Test
+    fun listOfEmails() {
+        listOf(pojoBased, mapBased).forEach { validation ->
+            assertEquals(0, validation.tested)
+            assertEquals(0, validation.passed)
+
+            validation.arrayOf("emails") {
+                email(null)
+            }
+
+            assertEquals(validation.rejections.toString(), 0, validation.rejections.size)
+            assertEquals(1, validation.tested)
+            assertEquals(1, validation.passed)
         }
     }
 

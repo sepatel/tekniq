@@ -75,11 +75,11 @@ fun applyParams(stmt: PreparedStatement, vararg params: Any?) = stmt.apply {
     params.forEachIndexed { i, any ->
         when (any) {
             is Time -> setTime(i + 1, any) // is also a java.util.Date so treat naturally instead
-            is LocalTime -> setTime(i + 1, Time(any.hour, any.minute, any.second))
+            is LocalTime -> setTime(i + 1, Time.valueOf(any))
             is java.sql.Date -> setDate(i + 1, any) // is also a java.util.Date so treat naturally instead
-            is LocalDate -> setDate(i + 1, java.sql.Date(any.year, any.monthValue - 1, any.dayOfMonth))
+            is LocalDate -> setDate(i + 1, java.sql.Date.valueOf(any))
             is ZonedDateTime -> setTimestamp(i + 1, Timestamp(any.toInstant().toEpochMilli()))
-            is LocalDateTime -> setTimestamp(i + 1, Timestamp(any.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
+            is LocalDateTime -> setTimestamp(i + 1, Timestamp.valueOf(any))
             is Date -> setTimestamp(i + 1, Timestamp(any.time))
             is Calendar -> setTimestamp(i + 1, Timestamp(any.timeInMillis))
             else -> setObject(i + 1, any)

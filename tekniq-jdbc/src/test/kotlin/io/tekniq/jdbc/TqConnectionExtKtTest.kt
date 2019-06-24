@@ -3,6 +3,7 @@ package io.tekniq.jdbc
 import org.junit.Assert.*
 import org.junit.Test
 import java.sql.ResultSet
+import java.time.*
 
 data class FooRow(val id: Int, val name: String)
 
@@ -13,6 +14,7 @@ class TqConnectionExtKtTest {
             stmt.execute("DROP TABLE spektest IF EXISTS ")
             stmt.execute("CREATE TABLE spektest ( id INTEGER , name VARCHAR(100) )")
             stmt.execute("INSERT INTO spektest(id, name) VALUES(1, 'Foo')")
+            stmt.execute("CREATE TABLE issue01(id INTEGER, date DATE, time TIME, ts DATETIME)")
             stmt.close()
         }
 
@@ -21,7 +23,27 @@ class TqConnectionExtKtTest {
         }
     }
 
-    @Test fun usingAnOpenAndValidDbConnection() {
+    @Test // Fixes https://github.com/sepatel/tekniq/issues/1
+    fun readWriteLocalDateTimeCorrectly() {
+        val localDate = LocalDate.now()
+        val localTime = LocalTime.ofSecondOfDay(7777)
+        val localDateTime = LocalDateTime.of(localDate, localTime)
+        subject.insert("INSERT INTO issue01 VALUES(1, ?, ?, ?)", localDate, localTime, localDateTime)
+        run {
+            val result = subject.selectOne("SELECT * FROM issue01 WHERE id=1") {
+                Triple(getDate("date"), getTime("time"), getTimestamp("ts"))
+            }
+            if (result == null) {
+                fail("Expected row back")
+            }
+            assertEquals(localDate, result!!.first.toLocalDate())
+            assertEquals(localTime, result.second.toLocalTime())
+            assertEquals(localDateTime, result.third.toLocalDateTime())
+        }
+    }
+
+    @Test
+    fun usingAnOpenAndValidDbConnection() {
         val sql = "SELECT id, name FROM spektest WHERE id=?"
         run {
             // can read an existing record in a table
