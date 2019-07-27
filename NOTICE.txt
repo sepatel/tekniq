@@ -6,3 +6,12 @@ This product includes software developed by Ben Manes
 io.tekniq.cache.concurrentlinkedhashmap package is a direct copy of the
 code located at the github repo with the package renamed to support the
 embedded use of the library without conflict with external inclusion.
+
+This product also includes software developed by Jon Kelly
+(https://github.com/jkelly467/kossh). The SSH library is a direct copy
+of the code located at the github repo with the package names changed
+to fit the io.tekniq.ssh namespace. License use was unclear as nothing
+was published around the licensing model. Also no existing means of
+distribution via maven existed as well. Thus integrating this directly
+into tekniq where ease of distribution and further code maintenance may
+take place.
