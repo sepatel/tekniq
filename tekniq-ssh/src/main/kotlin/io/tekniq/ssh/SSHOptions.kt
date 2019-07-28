@@ -35,9 +35,9 @@ data class SSHOptions(
         val knownHostsFile: String? = null
 ) {
     fun compressed(): SSHOptions = this.copy(compress = 5)
-    fun viaProxyHttp(host: String, port: Int = 80): SSHOptions = this.copy(proxy = ProxyHTTP(host, port))
-    fun viaProxySOCKS4(host: String, port: Int = 1080): SSHOptions = this.copy(proxy = ProxySOCKS4(host, port))
-    fun viaProxySOCKS5(host: String, port: Int = 1080): SSHOptions = this.copy(proxy = ProxySOCKS5(host, port))
+    fun viaProxyHttp(host: String, port: Int): SSHOptions = this.copy(proxy = ProxyHTTP(host, port))
+    fun viaProxySOCKS4(host: String, port: Int): SSHOptions = this.copy(proxy = ProxySOCKS4(host, port))
+    fun viaProxySOCKS5(host: String, port: Int): SSHOptions = this.copy(proxy = ProxySOCKS5(host, port))
     fun addIdentity(identity: SSHIdentity) = this.copy(identities = (identities + identity))
 }
 
@@ -51,6 +51,6 @@ object SSHIdentities {
             "id_rsa"
     )
     val defaultIdentities = defaultPrivKeyFilenames
-            .map { userHome + FS + ".ssh" + FS + it }
+            .map { "$userHome$FS.ssh$FS$it" }
             .map { SSHIdentity(it) }
 }

@@ -8,9 +8,7 @@ import org.slf4j.LoggerFactory
 import java.io.*
 
 open class SSH(val options: SSHOptions) : AllOperations, Closeable {
-
     companion object {
-
         /**
          * Executes [withssh] in a new ssh session and then close the session
          */

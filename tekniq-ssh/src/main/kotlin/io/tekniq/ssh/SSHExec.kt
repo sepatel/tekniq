@@ -73,7 +73,7 @@ private class TimeoutManagerThread(val timeout: Long, val todo: () -> Any) : Thr
     override fun run() {
         if (timeout > 0) {
             try {
-                Thread.sleep(timeout)
+                sleep(timeout)
                 interrupted = true
                 todo()
             } catch (e: InterruptedException) {
@@ -124,7 +124,7 @@ private class InputStreamThread(val channel: ChannelExec, val input: InputStream
                 }
             } while (!eofreached)
 
-            if (appender.length > 0) {
+            if (appender.isNotEmpty()) {
                 ExecPart(appender.toString()).output()
             }
             ExecEnd(channel.exitStatus).output()
