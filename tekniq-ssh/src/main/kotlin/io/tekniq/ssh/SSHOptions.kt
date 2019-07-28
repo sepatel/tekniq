@@ -13,7 +13,7 @@ data class SSHIdentity(
  */
 data class SSHOptions(
         val host: String = "localhost",
-        val username: String = "",
+        val username: String = System.getProperty("user.name", ""),
         val password: String? = null,
         val passphrase: String? = null,
         val name: String? = null,
