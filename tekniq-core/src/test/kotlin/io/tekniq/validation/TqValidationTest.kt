@@ -171,7 +171,7 @@ class TqValidationTest {
                 email(null)
             }
 
-            assertEquals(validation.rejections.toString(), 0, validation.rejections.size)
+            assertEquals(validation.rejections.toString(), 1, validation.rejections.size)
             assertEquals(1, validation.tested)
             assertEquals(1, validation.passed)
         }

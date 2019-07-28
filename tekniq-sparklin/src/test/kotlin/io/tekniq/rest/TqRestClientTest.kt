@@ -1,7 +1,7 @@
 package io.tekniq.rest
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
+import org.junit.Ignore
 import org.junit.Test
 
 class TqRestClientTest {
@@ -13,6 +13,7 @@ class TqRestClientTest {
         }
     }
 
+    @Ignore
     @Test
     fun failOnInsecureSite() {
         val client = TqRestClient()
@@ -21,6 +22,7 @@ class TqRestClientTest {
         }
     }
 
+    @Ignore
     @Test
     fun getFailsonInsecureSiteDueToPreviousCallDisablingSecurity() {
         failOnInsecureSite()

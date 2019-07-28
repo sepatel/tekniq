@@ -9,7 +9,7 @@ sourceSets.test.compileClasspath += configurations.providedCompile
 sourceSets.test.runtimeClasspath += configurations.providedCompile
 
 dependencies {
-  providedCompile 'com.google.code.findbugs:jsr305:2.0.1'
+  compileOnly 'com.google.code.findbugs:jsr305:2.0.1'
 }
 
 
