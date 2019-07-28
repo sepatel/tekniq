@@ -1,6 +1,6 @@
 dependencies {
-    implementation 'com.jcraft:jsch:0.1.55'
+    compile 'com.jcraft:jsch:0.1.55'
     //implementation 'com.jcraft:jsch.agentproxy.sshagent:0.0.9'
-    implementation 'org.slf4j:slf4j-api:1.7.26'
+    api 'org.slf4j:slf4j-api:1.7.26'
     //testImplementation 'io.kotlintest:kotlintest-runner-junit5:3.3.2'
 }
