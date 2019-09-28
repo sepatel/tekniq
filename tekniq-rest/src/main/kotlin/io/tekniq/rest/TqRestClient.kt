@@ -18,7 +18,8 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
                                 .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
                                 .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
                                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
-                        val allowSelfSigned: Boolean = false) {
+                        val allowSelfSigned: Boolean = false,
+                        val ignoreHostnameVerifier: Boolean = false) {
     private val ctx = SSLContext.getInstance("SSL").apply {
         init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
     }
@@ -58,8 +59,13 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
         var response: TqResponse? = null
         val duration = measureTimeMillis {
             val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                if (allowSelfSigned && this is HttpsURLConnection) {
-                    sslSocketFactory = ctx.socketFactory
+                if (this is HttpsURLConnection) {
+                    if (allowSelfSigned) {
+                        sslSocketFactory = ctx.socketFactory
+                    }
+                    if (ignoreHostnameVerifier) {
+                        hostnameVerifier = HostnameVerifier { _, _ -> true }
+                    }
                 }
                 requestMethod = method
                 setRequestProperty("Content-Type", "application/json")
