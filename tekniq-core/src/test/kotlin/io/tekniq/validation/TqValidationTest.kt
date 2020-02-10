@@ -44,6 +44,17 @@ class TqValidationTest {
     }
 
     @Test
+    fun check() {
+        pojoBased.with<PojoTestBean> {
+            check("emailNotEmpty") { it.emails.isNotEmpty() }
+            check("emailIsEmpty") { it.emails.isNullOrEmpty() }
+        }
+        println(pojoBased)
+        assertEquals(1, pojoBased.passed)
+        assertEquals(2, pojoBased.tested)
+    }
+
+    @Test
     fun or() {
     }
 

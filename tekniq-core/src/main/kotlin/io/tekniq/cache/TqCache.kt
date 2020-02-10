@@ -5,6 +5,7 @@ import java.util.AbstractMap.SimpleEntry
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.collections.MutableMap.MutableEntry
 
+@Deprecated("Please use TqCaffeine from tekniq-cache library instead")
 open class TqCache<K, V>(val expireAfterAccess: Long? = null,
                          val expireAfterWrite: Long? = null,
                          val maximumSize: Long? = null,
