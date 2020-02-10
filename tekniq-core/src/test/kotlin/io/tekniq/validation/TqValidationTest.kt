@@ -51,9 +51,12 @@ class TqValidationTest {
             check<List<String>>("fieldEmailNotEmpty", "field") { it?.isNotEmpty() == true }
             check<List<String>>("fieldEmailIsEmpty", "field") { it.isNullOrEmpty() }
         }
+        pojoBased
+                .check<List<String>>("fieldEmailNotEmpty", "field") { it?.isNotEmpty() == true }
+                .check<List<String>>("fieldEmailIsEmpty", "field") { it.isNullOrEmpty() }
         println(pojoBased.rejections)
-        assertEquals(2, pojoBased.passed)
-        assertEquals(4, pojoBased.tested)
+        assertEquals(3, pojoBased.passed)
+        assertEquals(6, pojoBased.tested)
     }
 
     @Test
