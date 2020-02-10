@@ -287,13 +287,30 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
                 return this
             }
 
-            val test = getValue(src, null) as T
-            val validationCheckResult = check(test)
+            val validationCheckResult = check(src as T)
             tested++
             if (validationCheckResult) {
                 passed++
             } else {
                 rejections.add(Rejection(code, fieldPath(null), message))
+            }
+
+            return this
+        }
+
+        inline fun <reified E: Any> check(code: String, field: String, message: String? = null, check: (E?) -> Boolean): TqTypedValidation<T> {
+            if (src == null) {
+                rejections.add(Rejection(code, fieldPath(field), message))
+                return this
+            }
+
+            val test = getValue(src, field) as E?
+            val validationCheckResult = check(test)
+            tested++
+            if (validationCheckResult) {
+                passed++
+            } else {
+                rejections.add(Rejection(code, fieldPath(field), message))
             }
 
             return this
