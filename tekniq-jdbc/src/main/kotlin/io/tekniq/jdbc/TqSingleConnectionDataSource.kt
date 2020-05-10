@@ -1,21 +1,18 @@
 package io.tekniq.jdbc
 
 import java.io.PrintWriter
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.SQLException
+import java.sql.*
 import java.util.logging.Logger
 import javax.sql.DataSource
 
 /**
- * Used mostly for testing purposes. Cannot imagine a real use case for a single connection data source otherwise. True
- * datasource libraries like vibur-dbcp should be used instead in most cases.
+ * Used mostly for testing purposes. Cannot imagine a real use case for a single connection data source otherwise.
+ * True datasource libraries like vibur-dbcp should be used instead in most cases.
  * @author Sejal Patel
  */
 open class TqSingleConnectionDataSource(url: String, username: String? = null, password: String? = null, autoCommit: Boolean = true) : DataSource {
-    private val connection: Connection = DriverManager.getConnection(url, username, password).apply {
-        setAutoCommit(autoCommit)
-    }
+    private val connection: Connection = DriverManager.getConnection(url, username, password)
+            .apply { setAutoCommit(autoCommit) }
 
     fun close() {
         connection.close()

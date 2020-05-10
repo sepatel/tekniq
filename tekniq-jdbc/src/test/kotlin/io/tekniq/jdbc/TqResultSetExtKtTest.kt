@@ -2,6 +2,7 @@ package io.tekniq.jdbc
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import javax.sql.rowset.CachedRowSet
 
 class TqResultSetExtKtTest {
     companion object {
@@ -15,11 +16,37 @@ class TqResultSetExtKtTest {
         }
     }
 
-    @Test fun usingAnOpenAndValidDbConnection() {
+    @Test
+    fun usingAnOpenAndValidDbConnection() {
         val sql = "SELECT * FROM spekresult WHERE id=?"
         run {
             // can read non-null values correctly
             subject.selectOne(sql, 1) {
+                assertEquals(1, getInt("id"))
+                assertEquals(Double.MAX_VALUE, getDoubleNull(8)!!, 0.1)
+                assertEquals(Double.MAX_VALUE, getDoubleNull("d")!!, 0.1)
+                assertEquals(3.14f, getFloatNull(7)!!, 0.1f)
+                assertEquals(3.14f, getFloatNull("f")!!, 0.1f)
+                assertEquals(Long.MAX_VALUE, getLongNull(6))
+                assertEquals(Long.MAX_VALUE, getLongNull("large"))
+                assertEquals(4096, getIntNull(5))
+                assertEquals(4096, getIntNull("number"))
+                assertEquals(131.toShort(), getShortNull(4))
+                assertEquals(131.toShort(), getShortNull("small"))
+                assertEquals(12.toByte(), getByteNull(3))
+                assertEquals(12.toByte(), getByteNull("b"))
+                assertEquals(true, getBooleanNull(2))
+                assertEquals(true, getBooleanNull("bool"))
+            }
+        }
+    }
+
+    @Test
+    fun usingCachedResults() {
+        val sql = "SELECT * FROM spekresult WHERE id=?"
+        run {
+            // can read non-null values correctly
+            subject.select(sql, 1).forEach {
                 assertEquals(1, getInt("id"))
                 assertEquals(Double.MAX_VALUE, getDoubleNull(8)!!, 0.1)
                 assertEquals(Double.MAX_VALUE, getDoubleNull("d")!!, 0.1)

@@ -2,6 +2,7 @@ package io.tekniq.jdbc
 
 import java.sql.*
 import javax.sql.DataSource
+import javax.sql.rowset.CachedRowSet
 
 inline fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level: Int = Connection.TRANSACTION_READ_COMMITTED, boundary: Connection.() -> T): T? {
     connection.use { conn ->
@@ -37,28 +38,28 @@ inline fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): 
     }
 }
 
-inline fun DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit)
-        = connection.use { it.select(sql, *params, action = action) }
+inline fun DataSource.select(sql: String, vararg params: Any?): CachedRowSet =
+        connection.use { it.select(sql, *params) }
 
-inline fun <T> DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T>
-        = connection.use { it.select(sql, *params, action = action) }
+inline fun DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit) =
+        connection.use { it.select(sql, *params, action = action) }
 
-fun <T> DataSource.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T?
-        = connection.use { it.selectOne(sql, *params, action = action) }
+inline fun <T> DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> =
+        connection.use { it.select(sql, *params, action = action) }
 
-fun DataSource.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
-fun DataSource.insert(sql: String, vararg params: Any?): Int = update(sql, *params)
-fun DataSource.update(sql: String, vararg params: Any?): Int {
-    connection.use { conn ->
-        conn.autoCommit = false
-        try {
-            val effected = conn.update(sql, *params)
-            conn.commit()
-            return effected
-        } catch (e: Exception) {
-            conn.rollback()
-            throw e
-        }
+inline fun <T> DataSource.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? =
+        connection.use { it.selectOne(sql, *params, action = action) }
+
+inline fun DataSource.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
+inline fun DataSource.insert(sql: String, vararg params: Any?): Int = update(sql, *params)
+inline fun DataSource.update(sql: String, vararg params: Any?): Int = connection.use { conn ->
+    conn.autoCommit = false
+    try {
+        val effected = conn.update(sql, *params)
+        conn.commit()
+        return effected
+    } catch (e: Exception) {
+        conn.rollback()
+        throw e
     }
 }
-

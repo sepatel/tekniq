@@ -4,6 +4,7 @@ import io.tekniq.validation.ValidationException
 import spark.*
 import kotlin.reflect.KClass
 
+@Deprecated("Recommended to use Javalin instead")
 class Sparklin(config: SparklinConfig = SparklinConfig(), routes: SparklinRoute.() -> Unit) {
     private val service: Service = Service.ignite()
 
