@@ -12,7 +12,9 @@ open class TqPropertiesConfig(private val propertiesFile: String, private val st
 private fun loadProperties(propertiesFile: String, stopOnFailure: Boolean) = Properties().apply {
     if (propertiesFile.startsWith("classpath:")) {
         val filename = propertiesFile.substring("classpath:".length)
-        val stream = javaClass.getResourceAsStream(filename) ?: TqPropertiesConfig::class.java.classLoader.getResourceAsStream(filename)
+        val stream = javaClass.getResourceAsStream(filename)
+                ?: Properties::javaClass.javaClass.getResourceAsStream(filename)
+                ?: TqPropertiesConfig::class.java.classLoader.getResourceAsStream(filename)
         if (stream != null) {
             load(stream)
         } else if (stopOnFailure) {

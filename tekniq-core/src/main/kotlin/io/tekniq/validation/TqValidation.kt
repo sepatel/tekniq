@@ -20,7 +20,7 @@ open class ValidationException(val rejections: Collection<Rejection>, val data: 
 @Deprecated("Please use TqValidation as Validation will be removed")
 typealias Validation = TqValidation
 
-open class TqValidation(val src: Any?, val path: String = "") {
+open class TqValidation(val src: Any? = null, val path: String = "") {
     val rejections = mutableListOf<Rejection>()
     var tested = 0
     var passed = 0
@@ -58,7 +58,11 @@ open class TqValidation(val src: Any?, val path: String = "") {
     }
 
     fun merge(vararg validations: TqValidation): TqValidation {
-        validations.forEach { rejections.addAll(it.rejections) }
+        validations.forEach {
+            rejections.addAll(it.rejections)
+            tested += it.tested
+            passed += it.passed
+        }
         return this
     }
 
@@ -216,6 +220,31 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return this
     }
 
+    inline fun <reified E : Any> check(code: String, field: String, message: String? = null, check: (E?) -> Boolean): TqValidation {
+        if (src == null) {
+            rejections.add(Rejection(code, fieldPath(field), message))
+            return this
+        }
+
+        val test = getValue(src, field) as E?
+        val validationCheckResult = check(test)
+        tested++
+        if (validationCheckResult) {
+            passed++
+        } else {
+            rejections.add(Rejection(code, fieldPath(field), message))
+        }
+
+        return this
+    }
+
+    inline fun <reified T : Any?> with(newSrc: T = src as T, action: TqTypedValidation<T>.() -> Unit): TqValidation {
+        val typedValidation = TqTypedValidation(newSrc)
+        action(typedValidation)
+        merge(typedValidation)
+        return this
+    }
+
     protected open fun test(field: String?, code: String, message: String?, check: (Any?) -> Boolean): TqValidation {
         if (src == null) {
             rejections.add(Rejection(code, fieldPath(field), message))
@@ -234,7 +263,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return this
     }
 
-    private fun fieldPath(field: String?): String? {
+    protected fun fieldPath(field: String?): String? {
         if (path.isNotEmpty()) {
             if (field == null) {
                 return path
@@ -244,7 +273,7 @@ open class TqValidation(val src: Any?, val path: String = "") {
         return field
     }
 
-    private fun getValue(src: Any, field: String?): Any? {
+    protected fun getValue(src: Any, field: String?): Any? {
         if (field == null) {
             return src
         }
@@ -267,6 +296,25 @@ open class TqValidation(val src: Any?, val path: String = "") {
             }
         }
         return value
+    }
+
+    class TqTypedValidation<T>(private val typedSrc: T) : TqValidation(typedSrc) {
+        fun check(code: String, message: String? = null, check: (T) -> Boolean): TqTypedValidation<T> {
+            if (src == null) {
+                rejections.add(Rejection(code, fieldPath(null), message))
+                return this
+            }
+
+            val validationCheckResult = check(src as T)
+            tested++
+            if (validationCheckResult) {
+                passed++
+            } else {
+                rejections.add(Rejection(code, fieldPath(null), message))
+            }
+
+            return this
+        }
     }
 }
 

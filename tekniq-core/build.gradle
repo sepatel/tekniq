@@ -1,15 +1,5 @@
-configurations { providedCompile }
-
 dependencies {
-  providedCompile "javax.servlet:javax.servlet-api:3.+"
+  implementation "com.google.code.findbugs:jsr305:2.0.1"
+  implementation "javax.servlet:javax.servlet-api:3.+"
 }
-
-sourceSets.main.compileClasspath += configurations.providedCompile
-sourceSets.test.compileClasspath += configurations.providedCompile
-sourceSets.test.runtimeClasspath += configurations.providedCompile
-
-dependencies {
-  compileOnly 'com.google.code.findbugs:jsr305:2.0.1'
-}
-
 

@@ -95,5 +95,15 @@ class TqConnectionExtKtTest {
             assertNotEquals(x, w)
         }
     }
+
+    @Test
+    fun usingCachedRowSets() {
+        subject.select("SELECT * from spektest")
+                .also { assertTrue("Size is ${it.size()}", it.size() == 2) }
+                .forEach {
+                    val row = mapper(this)
+                    assertEquals(getInt(1), row.id)
+                }
+    }
 }
 

@@ -4,10 +4,21 @@ import java.sql.*
 import java.time.*
 import java.util.*
 import java.util.Date
+import javax.sql.rowset.CachedRowSet
+import javax.sql.rowset.RowSetProvider
 
-inline fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit)
-        = prepareStatement(sql)
-        .apply { applyParams(this, *params) }
+inline fun Connection.select(sql: String, vararg params: Any?): CachedRowSet = prepareStatement(sql)
+        .also { applyParams(it, *params) }
+        .use { stmt ->
+            stmt.executeQuery().use { rs ->
+                RowSetProvider.newFactory()
+                        .createCachedRowSet()
+                        .also { it.populate(rs) }
+            }
+        }
+
+inline fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit) = prepareStatement(sql)
+        .also { applyParams(it, *params) }
         .use { stmt ->
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -19,7 +30,7 @@ inline fun Connection.select(sql: String, vararg params: Any?, action: ResultSet
 inline fun <T> Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> {
     val list = mutableListOf<T>()
     prepareStatement(sql)
-            .apply { applyParams(this, *params) }
+            .also { applyParams(it, *params) }
             .use { stmt ->
                 stmt.executeQuery().use { rs ->
                     while (rs.next()) {
@@ -33,7 +44,7 @@ inline fun <T> Connection.select(sql: String, vararg params: Any?, action: Resul
 inline fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? {
     var value: T? = null
     prepareStatement(sql)
-            .apply { applyParams(this, *params) }
+            .also { applyParams(it, *params) }
             .use { stmt ->
                 params.forEachIndexed { i, any -> stmt.setObject(i + 1, any) }
                 stmt.executeQuery().use { rs ->
@@ -47,14 +58,12 @@ inline fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: Re
 
 fun Connection.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
 fun Connection.insert(sql: String, vararg params: Any?): Int = update(sql, *params)
-fun Connection.update(sql: String, vararg params: Any?): Int
-        = prepareStatement(sql)
-        .apply { applyParams(this, *params) }
+fun Connection.update(sql: String, vararg params: Any?): Int = prepareStatement(sql)
+        .also { applyParams(it, *params) }
         .use { it.executeUpdate() }
 
-fun Connection.insertReturnKey(sql: String, vararg params: Any?): String?
-        = prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        .apply { applyParams(this, *params) }
+fun Connection.insertReturnKey(sql: String, vararg params: Any?): String? = prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
+        .also { applyParams(it, *params) }
         .use { stmt ->
             val result = stmt.executeUpdate()
             var answer: String? = null
@@ -68,8 +77,7 @@ fun Connection.insertReturnKey(sql: String, vararg params: Any?): String?
             return answer
         }
 
-inline fun <T> Connection.call(sql: String, action: CallableStatement.() -> T): T?
-        = prepareCall(sql).use { action.invoke(it) }
+inline fun <T> Connection.call(sql: String, action: CallableStatement.() -> T): T? = prepareCall(sql).use { action.invoke(it) }
 
 fun applyParams(stmt: PreparedStatement, vararg params: Any?) = stmt.apply {
     params.forEachIndexed { i, any ->
