@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package io.tekniq.jdbc
 
 import java.sql.CallableStatement

@@ -1,3 +1,5 @@
+@file:Suppress("unused", "NOTHING_TO_INLINE")
+
 package io.tekniq.jdbc
 
 import java.sql.*

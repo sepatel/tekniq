@@ -13,6 +13,7 @@ import javax.net.ssl.*
 import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
+@Suppress("unused")
 open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
                         val mapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
                                 .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)

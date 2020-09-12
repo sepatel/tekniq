@@ -10,6 +10,7 @@ import javax.sql.DataSource
  * True datasource libraries like vibur-dbcp should be used instead in most cases.
  * @author Sejal Patel
  */
+@Suppress("unused")
 open class TqSingleConnectionDataSource(url: String, username: String? = null, password: String? = null, autoCommit: Boolean = true) : DataSource {
     private val connection: Connection = DriverManager.getConnection(url, username, password)
             .apply { setAutoCommit(autoCommit) }

@@ -1,11 +1,7 @@
 package io.tekniq.config
 
-open class TqChainConfig(vararg private val confs: TqConfig) : TqConfig() {
-    private val refConfigurations: MutableList<TqConfig>
-
-    init {
-        refConfigurations = mutableListOf<TqConfig>()
-    }
+open class TqChainConfig(private vararg val confs: TqConfig) : TqConfig() {
+    private val refConfigurations: MutableList<TqConfig> = mutableListOf()
 
     fun add(config: TqConfig) = refConfigurations.add(config)
     override fun contains(key: String): Boolean {

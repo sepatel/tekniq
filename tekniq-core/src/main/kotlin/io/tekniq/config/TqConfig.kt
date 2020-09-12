@@ -24,7 +24,7 @@ abstract class TqConfig {
     open fun <T> get(key: String, defaultValue: T? = null, type: Class<T>?): T? {
         if (!configs.containsKey(key)) { // load config into the cache if missing
             val value = getValue(key, type) ?: return defaultValue
-            configs.put(key, value)
+            configs[key] = value
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -33,7 +33,7 @@ abstract class TqConfig {
 
     open fun getDouble(key: String, defaultValue: Double? = null): Double? {
         if (!contains(key)) {
-            return defaultValue?.toDouble() ?: null
+            return defaultValue
         }
         val any = get<Any>(key)
         when (any) {
@@ -46,7 +46,7 @@ abstract class TqConfig {
 
     open fun getFloat(key: String, defaultValue: Float? = null): Float? {
         if (!contains(key)) {
-            return defaultValue?.toFloat() ?: null
+            return defaultValue
         }
         val any = get<Any>(key)
         when (any) {
@@ -59,7 +59,7 @@ abstract class TqConfig {
 
     open fun getInt(key: String, defaultValue: Int? = null): Int? {
         if (!contains(key)) {
-            return defaultValue?.toInt() ?: null
+            return defaultValue
         }
         val any = get<Any>(key)
         when (any) {
@@ -72,7 +72,7 @@ abstract class TqConfig {
 
     open fun getLong(key: String, defaultValue: Long? = null): Long? {
         if (!contains(key)) {
-            return defaultValue?.toLong() ?: null
+            return defaultValue
         }
         val any = get<Any>(key)
         when (any) {
@@ -85,7 +85,7 @@ abstract class TqConfig {
 
     open fun getShort(key: String, defaultValue: Short? = null): Short? {
         if (!contains(key)) {
-            return defaultValue?.toShort() ?: null
+            return defaultValue
         }
         val any = get<Any>(key)
         when (any) {
@@ -104,11 +104,11 @@ abstract class TqConfig {
     open fun reload() = Unit
 
     protected fun reload(newConfigs: Map<String, Any?>) {
-        val existing = HashSet<String>(configs.keys)
+        val existing = HashSet(configs.keys)
         newConfigs.entries.forEach {
             val oldValue = configs[it.key]
             if (!configs.containsKey(it.key) || oldValue != it.value) {
-                configs.put(it.key, it.value)
+                configs[it.key] = it.value
                 changed(it.key, oldValue, it.value)
             }
             existing.remove(it.key)

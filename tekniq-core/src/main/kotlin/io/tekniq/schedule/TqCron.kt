@@ -145,10 +145,10 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
         }
     }
 
-    private fun findNextDay(calendar: Calendar, daysOfMonth: BitSet, dayOfMonth: Int, daysOfWeek: BitSet, dayOfWeek: Int,
+    private fun findNextDay(calendar: Calendar, daysOfMonth: BitSet, dom: Int, daysOfWeek: BitSet, dow: Int,
                             resets: List<Int>): Int {
-        var dayOfMonth = dayOfMonth
-        var dayOfWeek = dayOfWeek
+        var dayOfMonth = dom
+        var dayOfWeek = dow
 
         var count = 0
         val max = 366
@@ -180,7 +180,7 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
         // roll over if needed
         if (nextValue == -1) {
             calendar.add(nextField, 1)
-            reset(calendar, Arrays.asList(field))
+            reset(calendar, listOf(field))
             nextValue = bits.nextSetBit(0)
         }
         if (nextValue != value) {
@@ -205,13 +205,13 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
      * @return a new String with the values from the list replaced
      */
     private fun replaceOrdinals(value: String, commaSeparatedList: String): String {
-        var value = value
+        var v = value
         val list = commaSeparatedList.split(",")
         for (i in list.indices) {
             val item = list[i].toUpperCase()
-            value = value.toUpperCase().replace(item, "$i")
+            v = v.toUpperCase().replace(item, "$i")
         }
-        return value
+        return v
     }
 
     private fun setDaysOfMonth(bits: BitSet, field: String) {
@@ -223,20 +223,20 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
     }
 
     private fun setDays(bits: BitSet, field: String, max: Int) {
-        var field = field
-        if (field.contains("?")) {
-            field = "*"
+        var f = field
+        if (f.contains("?")) {
+            f = "*"
         }
-        setNumberHits(bits, field, 0, max)
+        setNumberHits(bits, f, 0, max)
     }
 
     private fun setMonths(bits: BitSet, value: String) {
-        var value = value
+        var v = value
         val max = 12
-        value = replaceOrdinals(value, "FOO,JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC")
+        v = replaceOrdinals(v, "FOO,JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC")
         val months = BitSet(13)
         // Months start with 1 in Cron and 0 in Calendar, so push the values first into a longer bit set
-        setNumberHits(months, value, 1, max + 1)
+        setNumberHits(months, v, 1, max + 1)
         // ... and then rotate it to the front of the months
         (1..max)
                 .filter { months[it] }
@@ -259,7 +259,7 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
                 if (!split[0].contains("-")) {
                     range[1] = max - 1
                 }
-                val delta = Integer.valueOf(split[1])!!
+                val delta = Integer.valueOf(split[1])
                 if (delta <= 0) {
                     throw IllegalArgumentException("Incrementer delta must be 1 or higher: '$field' in expression \"$expression\"")
                 }
@@ -280,15 +280,15 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
             return result
         }
         if (!field.contains("-")) {
-            result[1] = Integer.valueOf(field)!!
+            result[1] = Integer.valueOf(field)
             result[0] = result[1]
         } else {
             val split = field.split('-')
             if (split.size > 2) {
                 throw IllegalArgumentException("Range has more than two fields: '$field' in expression \"$expression\"")
             }
-            result[0] = Integer.valueOf(split[0])!!
-            result[1] = Integer.valueOf(split[1])!!
+            result[0] = Integer.valueOf(split[0])
+            result[1] = Integer.valueOf(split[1])
         }
         if (result[0] >= max || result[1] >= max) {
             throw IllegalArgumentException("Range exceeds maximum ($max): '$field' in expression \"$expression\"")
@@ -312,6 +312,7 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
          * @return `true` if the given expression is a valid schedule expression
          * @since 4.3
          */
+        @Suppress("unused")
         fun isValidExpression(expression: String): Boolean {
             return areValidCronFields(expression.split(' ')
                     .map(String::trim)

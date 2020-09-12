@@ -17,9 +17,6 @@ open class ValidationException(val rejections: Collection<Rejection>, val data: 
         }
 }
 
-@Deprecated("Please use TqValidation as Validation will be removed")
-typealias Validation = TqValidation
-
 open class TqValidation(val src: Any? = null, val path: String = "") {
     val rejections = mutableListOf<Rejection>()
     var tested = 0
@@ -87,9 +84,9 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
                     value = (value as Map<*, *>)[it]
                 }
                 else -> try {
-                    value!!.javaClass.getMethod("get" + it.capitalize()).let {
-                        it.isAccessible = true
-                        value = it.invoke(value)
+                    value!!.javaClass.getMethod("get" + it.capitalize()).let { method ->
+                        method.isAccessible = true
+                        value = method.invoke(value)
                     }
                 } catch (e: NoSuchMethodException) {
                     return this
@@ -123,9 +120,9 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
                     value = (value as Map<*, *>)[it]
                 }
                 else -> try {
-                    value!!.javaClass.getMethod("get" + it.capitalize()).let {
-                        it.isAccessible = true
-                        value = it.invoke(value)
+                    value!!.javaClass.getMethod("get" + it.capitalize()).let { method ->
+                        method.isAccessible = true
+                        value = method.invoke(value)
                     }
                 } catch (e: NoSuchMethodException) {
                     action.invoke()
@@ -211,7 +208,7 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         true
     }
 
-    inline fun stop(data: Any? = null): Nothing = throw ValidationException(rejections, data)
+    fun stop(data: Any? = null): Nothing = throw ValidationException(rejections, data)
 
     fun stopOnRejections(data: Any? = null): TqValidation {
         if (rejections.size > 0) {
@@ -263,7 +260,7 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         return this
     }
 
-    protected fun fieldPath(field: String?): String? {
+    fun fieldPath(field: String?): String? {
         if (path.isNotEmpty()) {
             if (field == null) {
                 return path
@@ -273,7 +270,7 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         return field
     }
 
-    protected fun getValue(src: Any, field: String?): Any? {
+    fun getValue(src: Any, field: String?): Any? {
         if (field == null) {
             return src
         }
@@ -298,7 +295,7 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         return value
     }
 
-    class TqTypedValidation<T>(private val typedSrc: T) : TqValidation(typedSrc) {
+    class TqTypedValidation<T>(typedSrc: T) : TqValidation(typedSrc) {
         fun check(code: String, message: String? = null, check: (T) -> Boolean): TqTypedValidation<T> {
             if (src == null) {
                 rejections.add(Rejection(code, fieldPath(null), message))

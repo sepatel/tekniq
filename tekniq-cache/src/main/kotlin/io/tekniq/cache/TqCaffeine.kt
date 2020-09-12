@@ -23,7 +23,7 @@ open class TqCaffeine<K, V>(val expireAfterAccess: Long? = null,
                     builder.recordStats()
                 }
             }
-            .build({ key -> loader(key) })
+            .build { key -> loader(key) }
     private val map = cacheLoader.asMap()
     override val entries: MutableSet<MutableEntry<K, V>>
         get() = map.entries

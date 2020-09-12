@@ -127,16 +127,12 @@ object TqTracking {
         }
 
         var sum = 0
-        for (i in 0..tracking.length - 1 - 1) {
+        for (i in 0 until tracking.length - 1) {
             val digit = tracking[i] - '0'
             if (digit < 0 || digit > 9) {
                 return false
             }
-            if (i % 2 == 0) { // odd numbers logic because it falls on even positions
-                sum += digit
-            } else { // evens logic because it falls on odd positions
-                sum += digit * 3
-            }
+            sum += if (i % 2 == 0) digit else digit * 3
         }
 
         val calcCheckDigit = differenceFromNextHighestMultipleOf10(sum)
@@ -229,17 +225,13 @@ object TqTracking {
         }
 
         var sum = 0
-        for (i in 2..tracking.length - 1 - 1) {
+        for (i in 2 until tracking.length - 1) {
             val digit = tracking[i]
             var value = digit - '0'
             if (value > 9) { // need to convert letters to numbers accordingly
                 value = (digit - 'A' + 2) % 10
             }
-            if (i % 2 == 0) { // even position
-                sum += value
-            } else { // odd position
-                sum += value * 2
-            }
+            sum += if (i % 2 == 0) value else value * 2
         }
 
         val checkdigit = differenceFromNextHighestMultipleOf10(sum)
@@ -287,18 +279,14 @@ object TqTracking {
             // mod 11 check which if it fails drop back to mod 10 check as either are valid for express
             val multipliers = intArrayOf(8, 6, 4, 2, 3, 5, 9, 7)
             var sum = 0
-            for (i in 0..tracking.length - 1 - 1) {
+            for (i in 0 until tracking.length - 1) {
                 val value = tracking[i] - '0'
                 sum += value * multipliers[i]
             }
-            val remainder = sum % 11
-            val checkdigit: Int
-            if (remainder == 0) {
-                checkdigit = 5
-            } else if (remainder == 1) {
-                checkdigit = 0
-            } else {
-                checkdigit = 11 - remainder
+            val checkdigit: Int = when (val remainder = sum % 11) {
+                0 -> 5
+                1 -> 0
+                else -> 11 - remainder
             }
             if (tracking[tracking.length - 1] - '0' == checkdigit) {
                 return true
@@ -308,11 +296,7 @@ object TqTracking {
         var sum = 0
         for (i in tracking.length - 2 downTo 0) {
             val value = tracking[i] - '0'
-            if (i % 2 == tracking.length % 2) {
-                sum += 3 * value
-            } else {
-                sum += value
-            }
+            sum += if (i % 2 == tracking.length % 2) 3 * value else value
         }
 
         val checkdigit = differenceFromNextHighestMultipleOf10(sum)
