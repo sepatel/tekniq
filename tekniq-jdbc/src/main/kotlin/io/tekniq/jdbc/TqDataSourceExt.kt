@@ -2,11 +2,17 @@
 
 package io.tekniq.jdbc
 
-import java.sql.*
+import java.sql.CallableStatement
+import java.sql.Connection
+import java.sql.ResultSet
 import javax.sql.DataSource
 import javax.sql.rowset.CachedRowSet
 
-inline fun <T> DataSource.transaction(commitOnCompletion: Boolean = true, level: Int = Connection.TRANSACTION_READ_COMMITTED, boundary: Connection.() -> T): T? {
+inline fun <T> DataSource.transaction(
+    commitOnCompletion: Boolean = true,
+    level: Int = Connection.TRANSACTION_READ_COMMITTED,
+    boundary: Connection.() -> T
+): T? {
     connection.use { conn ->
         conn.autoCommit = false
         conn.transactionIsolation = level
@@ -41,16 +47,16 @@ inline fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): 
 }
 
 inline fun DataSource.select(sql: String, vararg params: Any?): CachedRowSet =
-        connection.use { it.select(sql, *params) }
+    connection.use { it.select(sql, *params) }
 
 inline fun DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit) =
-        connection.use { it.select(sql, *params, action = action) }
+    connection.use { it.select(sql, *params, action = action) }
 
 inline fun <T> DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> =
-        connection.use { it.select(sql, *params, action = action) }
+    connection.use { it.select(sql, *params, action = action) }
 
 inline fun <T> DataSource.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? =
-        connection.use { it.selectOne(sql, *params, action = action) }
+    connection.use { it.selectOne(sql, *params, action = action) }
 
 inline fun DataSource.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
 inline fun DataSource.insert(sql: String, vararg params: Any?): Int = update(sql, *params)

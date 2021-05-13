@@ -1,4 +1,0 @@
-dependencies {
-    compile project(":tekniq-core")
-    testCompile 'org.hsqldb:hsqldb:2.3.4'
-}

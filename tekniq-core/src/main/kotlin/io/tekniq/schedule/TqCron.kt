@@ -39,8 +39,8 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
 
     init {
         val fields = expression.split(' ')
-                .map(String::trim)
-                .filterNot(String::isEmpty)
+            .map(String::trim)
+            .filterNot(String::isEmpty)
         if (!areValidCronFields(fields)) {
             throw IllegalArgumentException("Cron expression must consist of 6 fields (found ${fields.size} in \"$expression\")")
         }
@@ -145,8 +145,10 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
         }
     }
 
-    private fun findNextDay(calendar: Calendar, daysOfMonth: BitSet, dom: Int, daysOfWeek: BitSet, dow: Int,
-                            resets: List<Int>): Int {
+    private fun findNextDay(
+        calendar: Calendar, daysOfMonth: BitSet, dom: Int, daysOfWeek: BitSet, dow: Int,
+        resets: List<Int>
+    ): Int {
         var dayOfMonth = dom
         var dayOfWeek = dow
 
@@ -175,7 +177,14 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
      * @param lowerOrders the Calendar field ids that should be reset (i.e. the ones of lower significance than the field of interest)
      * @return the value of the calendar field that is next in the sequence
      */
-    private fun findNext(bits: BitSet, value: Int, calendar: Calendar, field: Int, nextField: Int, lowerOrders: List<Int>): Int {
+    private fun findNext(
+        bits: BitSet,
+        value: Int,
+        calendar: Calendar,
+        field: Int,
+        nextField: Int,
+        lowerOrders: List<Int>
+    ): Int {
         var nextValue = bits.nextSetBit(value)
         // roll over if needed
         if (nextValue == -1) {
@@ -208,8 +217,8 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
         var v = value
         val list = commaSeparatedList.split(",")
         for (i in list.indices) {
-            val item = list[i].toUpperCase()
-            v = v.toUpperCase().replace(item, "$i")
+            val item = list[i].uppercase(Locale.getDefault())
+            v = v.uppercase(Locale.getDefault()).replace(item, "$i")
         }
         return v
     }
@@ -239,8 +248,8 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
         setNumberHits(months, v, 1, max + 1)
         // ... and then rotate it to the front of the months
         (1..max)
-                .filter { months[it] }
-                .forEach { bits.set(it - 1) }
+            .filter { months[it] }
+            .forEach { bits.set(it - 1) }
     }
 
     private fun setNumberHits(bits: BitSet, value: String, min: Int, max: Int) {
@@ -314,9 +323,11 @@ class TqCron(val expression: String, val timeZone: TimeZone = TimeZone.getDefaul
          */
         @Suppress("unused")
         fun isValidExpression(expression: String): Boolean {
-            return areValidCronFields(expression.split(' ')
+            return areValidCronFields(
+                expression.split(' ')
                     .map(String::trim)
-                    .filterNot(String::isEmpty))
+                    .filterNot(String::isEmpty)
+            )
         }
 
         private fun areValidCronFields(fields: Iterable<String>): Boolean = fields.toList().size == 6

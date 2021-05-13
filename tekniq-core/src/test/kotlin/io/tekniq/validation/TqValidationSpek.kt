@@ -1,25 +1,26 @@
 package io.tekniq.validation
 
-import org.junit.Assert.*
-import org.junit.Before
-import org.junit.Test
+import org.spekframework.spek2.Spek
+import org.spekframework.spek2.style.specification.describe
 import java.util.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-private data class PojoTestBean(val id: String, val name: String?, val weight: Float?, val birthday: Date?, val extra: Boolean, val nullable: Boolean?, val list: List<ListItem> = emptyList(), val set: Set<ListItem> = emptySet(), val emails: List<String> = emptyList())
-private data class ListItem(val id: Int, val text: String)
-
-class TqValidationTest {
-    private lateinit var pojoBased: TqValidation
-    private lateinit var mapBased: TqValidation
-
-    @Before
-    fun setup() {
-        pojoBased = TqValidation(PojoTestBean("42", "Bob", 140.6f, Date(), true, null,
+object TqValidationSpek : Spek({
+    val pojoBased by memoized {
+        TqValidation(
+            PojoTestBean(
+                "42", "Bob", 140.6f, Date(), true, null,
                 list = listOf(ListItem(1, "One"), ListItem(2, "Two")),
                 set = setOf(ListItem(3, "Three"), ListItem(4, "Four")),
                 emails = listOf("here@example.com", "broken@example..com")
-        ))
-        mapBased = TqValidation(mapOf(
+            )
+        )
+    }
+    val mapBased by memoized {
+        TqValidation(
+            mapOf(
                 "id" to "42",
                 "name" to "Bob",
                 "weight" to 140.6f,
@@ -29,47 +30,11 @@ class TqValidationTest {
                 "list" to listOf(ListItem(1, "One"), ListItem(2, "Two")),
                 "set" to setOf(ListItem(3, "Three"), ListItem(4, "Four")),
                 "emails" to listOf("here@example.com", "broken@example..com")
-        ))
+            )
+        )
     }
 
-    @Test
-    fun and() {
-        pojoBased.and("Customized Message") {
-            required("name")
-            required("monkey", "I'm a purple monkey")
-            required("normal")
-        }
-        assertEquals(0, pojoBased.passed)
-        assertEquals("Customized Message", pojoBased.rejections[0].message)
-    }
-
-    @Test
-    fun check() {
-        pojoBased.with<PojoTestBean> {
-            check("emailNotEmpty") { it.emails.isNotEmpty() }
-            check("emailIsEmpty") { it.emails.isNullOrEmpty() }
-            check<List<String>>("fieldEmailNotEmpty", "field") { it?.isNotEmpty() == true }
-            check<List<String>>("fieldEmailIsEmpty", "field") { it.isNullOrEmpty() }
-        }
-        pojoBased
-                .check<List<String>>("fieldEmailNotEmpty", "field") { it?.isNotEmpty() == true }
-                .check<List<String>>("fieldEmailIsEmpty", "field") { it.isNullOrEmpty() }
-        println(pojoBased.rejections)
-        assertEquals(3, pojoBased.passed)
-        assertEquals(6, pojoBased.tested)
-    }
-
-    @Test
-    fun or() {
-    }
-
-    @Test
-    fun ifDefinedWithPojo() = ifDefinedBase(pojoBased)
-
-    @Test
-    fun ifDefinedWithMap() = ifDefinedBase(mapBased)
-
-    private fun ifDefinedBase(validation: TqValidation) {
+    fun ifDefinedBase(validation: TqValidation) {
         assertEquals(0, validation.tested)
         assertEquals(0, validation.passed)
         assertEquals(0, validation.rejections.size)
@@ -89,13 +54,7 @@ class TqValidationTest {
         assertTrue(triggered)
     }
 
-    @Test
-    fun ifNotDefinedWithPojo() = ifNotDefinedBase(pojoBased)
-
-    @Test
-    fun ifNotDefinedWithMap() = ifNotDefinedBase(mapBased)
-
-    private fun ifNotDefinedBase(validation: TqValidation) {
+    fun ifNotDefinedBase(validation: TqValidation) {
         assertEquals(0, validation.tested)
         assertEquals(0, validation.passed)
         assertEquals(0, validation.rejections.size)
@@ -115,14 +74,53 @@ class TqValidationTest {
         assertFalse(triggered)
     }
 
-    @Test
-    fun required() {
+    describe("basic validations") {
+        it("and") {
+            pojoBased.and("Customized Message") {
+                required("name")
+                required("monkey", "I'm a purple monkey")
+                required("normal")
+            }
+            assertEquals(0, pojoBased.passed)
+            assertEquals("Customized Message", pojoBased.rejections[0].message)
+        }
+
+        it("check") {
+            pojoBased.with<PojoTestBean> {
+                check("emailNotEmpty") { it.emails.isNotEmpty() }
+                check("emailIsEmpty") { it.emails.isNullOrEmpty() }
+                check<List<String>>("fieldEmailNotEmpty", "field") { it?.isNotEmpty() == true }
+                check<List<String>>("fieldEmailIsEmpty", "field") { it.isNullOrEmpty() }
+            }
+            pojoBased
+                .check<List<String>>("fieldEmailNotEmpty", "field") { it?.isNotEmpty() == true }
+                .check<List<String>>("fieldEmailIsEmpty", "field") { it.isNullOrEmpty() }
+            println(pojoBased.rejections)
+            assertEquals(3, pojoBased.passed)
+            assertEquals(6, pojoBased.tested)
+        }
     }
 
-    @Test
-    fun date() {
+    describe("pojo and map working the same") {
+        it("defined with pojo") {
+            ifDefinedBase(pojoBased)
+        }
+
+        it("defined with map") {
+            ifDefinedBase(mapBased)
+        }
+
+        it("not defined with pojo") {
+            ifNotDefinedBase(pojoBased)
+        }
+
+        it("not defined with map") {
+            ifNotDefinedBase(mapBased)
+        }
     }
 
+    // TODO: Since the plan is to completely redesign the validation framework anyway, probably not worth porting the tests
+    /*
     @Test
     fun numberWithPojo() = numberBase(pojoBased)
 
@@ -231,4 +229,19 @@ class TqValidationTest {
             assertEquals(3, validation.rejections.size)
         }
     }
+     */
+}) {
+    private data class PojoTestBean(
+        val id: String,
+        val name: String?,
+        val weight: Float?,
+        val birthday: Date?,
+        val extra: Boolean,
+        val nullable: Boolean?,
+        val list: List<ListItem> = emptyList(),
+        val set: Set<ListItem> = emptySet(),
+        val emails: List<String> = emptyList()
+    )
+
+    private data class ListItem(val id: Int, val text: String)
 }

@@ -1,7 +1,9 @@
 package io.tekniq.jdbc
 
 import java.io.PrintWriter
-import java.sql.*
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.SQLException
 import java.util.logging.Logger
 import javax.sql.DataSource
 
@@ -11,9 +13,14 @@ import javax.sql.DataSource
  * @author Sejal Patel
  */
 @Suppress("unused")
-open class TqSingleConnectionDataSource(url: String, username: String? = null, password: String? = null, autoCommit: Boolean = true) : DataSource {
+open class TqSingleConnectionDataSource(
+    url: String,
+    username: String? = null,
+    password: String? = null,
+    autoCommit: Boolean = true
+) : DataSource {
     private val connection: Connection = DriverManager.getConnection(url, username, password)
-            .apply { setAutoCommit(autoCommit) }
+        .apply { setAutoCommit(autoCommit) }
 
     fun close() {
         connection.close()

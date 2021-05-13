@@ -9,26 +9,38 @@ import java.net.URL
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.util.*
-import javax.net.ssl.*
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
 @Suppress("unused")
-open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
-                        val mapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
-                                .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-                                .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-                                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
-                        val allowSelfSigned: Boolean = false,
-                        val ignoreHostnameVerifier: Boolean = false) {
+open class TqRestClient(
+    val logHandler: RestLogHandler = NoOpRestLogHandler,
+    val mapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
+        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+        .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
+    val allowSelfSigned: Boolean = false,
+    val ignoreHostnameVerifier: Boolean = false
+) {
     private val ctx = SSLContext.getInstance("SSL").apply {
         init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
     }
 
-    open fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse = request("DELETE", url, headers = headers)
-    open fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse = request("GET", url, headers = headers)
-    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse = request("PUT", url, json, headers)
-    open fun post(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse = request("POST", url, json, headers)
+    open fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse =
+        request("DELETE", url, headers = headers)
+
+    open fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse =
+        request("GET", url, headers = headers)
+
+    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse =
+        request("PUT", url, json, headers)
+
+    open fun post(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse =
+        request("POST", url, json, headers)
 
     open fun <T : Any?> delete(url: String, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
         val response = delete(url, headers)
@@ -40,12 +52,22 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
         return action(response)
     }
 
-    open fun <T : Any?> put(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
+    open fun <T : Any?> put(
+        url: String,
+        json: Any?,
+        headers: Map<String, Any> = emptyMap(),
+        action: TqResponse.() -> T
+    ): T? {
         val response = put(url, json, headers)
         return action(response)
     }
 
-    open fun <T : Any?> post(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
+    open fun <T : Any?> post(
+        url: String,
+        json: Any?,
+        headers: Map<String, Any> = emptyMap(),
+        action: TqResponse.() -> T
+    ): T? {
         val response = post(url, json, headers)
         return action(response)
     }
@@ -55,7 +77,12 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
         else -> mapper.writeValueAsString(json)
     }
 
-    protected fun request(method: String, url: String, json: Any? = null, headers: Map<String, Any> = emptyMap()): TqResponse {
+    protected fun request(
+        method: String,
+        url: String,
+        json: Any? = null,
+        headers: Map<String, Any> = emptyMap()
+    ): TqResponse {
         val payload: String = transform(json)
         var response: TqResponse? = null
         val duration = measureTimeMillis {
@@ -88,7 +115,16 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
                 TqResponse(-1, e.message ?: "", conn.headerFields, mapper)
             }
         }
-        logHandler.onRestLog(RestLog(method, url, duration = duration, request = payload, status = response!!.status, response = response!!.body))
+        logHandler.onRestLog(
+            RestLog(
+                method,
+                url,
+                duration = duration,
+                request = payload,
+                status = response!!.status,
+                response = response!!.body
+            )
+        )
         return response ?: TqResponse(-1, "", emptyMap(), mapper)
     }
 
@@ -99,7 +135,12 @@ open class TqRestClient(val logHandler: RestLogHandler = NoOpRestLogHandler,
     }
 }
 
-data class TqResponse(val status: Int, val body: String, private val headers: Map<String, Any>, private val mapper: ObjectMapper) {
+data class TqResponse(
+    val status: Int,
+    val body: String,
+    private val headers: Map<String, Any>,
+    private val mapper: ObjectMapper
+) {
     fun header(key: String): Any? {
         val value = headers[key] ?: return null
         if (value is Collection<*> && value.size == 1) {
@@ -122,7 +163,15 @@ data class TqResponse(val status: Int, val body: String, private val headers: Ma
     fun <T : Any> jsonAsNullable(type: KClass<T>): T? = mapper.readValue(body, type.java)
 }
 
-data class RestLog(val method: String, val url: String, val ts: Date = Date(), val duration: Long = 0, val request: String? = null, val status: Int = 0, val response: String? = null)
+data class RestLog(
+    val method: String,
+    val url: String,
+    val ts: Date = Date(),
+    val duration: Long = 0,
+    val request: String? = null,
+    val status: Int = 0,
+    val response: String? = null
+)
 
 interface RestLogHandler {
     fun onRestLog(log: RestLog)

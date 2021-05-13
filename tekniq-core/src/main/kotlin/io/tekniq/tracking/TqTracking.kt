@@ -1,5 +1,7 @@
 package io.tekniq.tracking
 
+import java.util.*
+
 enum class TqTrackingType {
     Airborne, AustraliaPost, CanadaPost, DHL, FedEx, TNT, UPS, USPS
 }
@@ -219,7 +221,7 @@ object TqTracking {
      *
      */
     private fun isUps(trackingNumber: String): Boolean {
-        val tracking = trackingNumber.toUpperCase().replace(" ".toRegex(), "")
+        val tracking = trackingNumber.uppercase(Locale.getDefault()).replace(" ".toRegex(), "")
         if (!tracking.startsWith("1Z")) {
             return false
         }
@@ -266,7 +268,7 @@ object TqTracking {
      *
      */
     private fun isUsps(trackingNumber: String): Boolean {
-        var tracking = trackingNumber.toUpperCase().replace(" ".toRegex(), "")
+        var tracking = trackingNumber.uppercase(Locale.getDefault()).replace(" ".toRegex(), "")
         val length = tracking.length
         if (length != 22 && length != 20 && length != 13) {
             return false

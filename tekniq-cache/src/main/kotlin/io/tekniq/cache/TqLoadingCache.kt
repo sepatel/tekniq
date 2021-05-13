@@ -5,25 +5,28 @@ import com.github.benmanes.caffeine.cache.LoadingCache
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.collections.MutableMap.MutableEntry
 
-open class TqCaffeine<K, V>(val expireAfterAccess: Long? = null,
-                            val expireAfterWrite: Long? = null,
-                            val refreshAfterWrite: Long? = null,
-                            val maximumSize: Long? = null,
-                            val recordStats: Boolean = false,
-                            private val loader: (key: K) -> V?
+typealias TqCaffeine<K, V> = TqLoadingCache<K, V>
+
+open class TqLoadingCache<K, V>(
+    val expireAfterAccess: Long? = null,
+    val expireAfterWrite: Long? = null,
+    val refreshAfterWrite: Long? = null,
+    val maximumSize: Long? = null,
+    val recordStats: Boolean = false,
+    private val loader: (key: K) -> V?
 ) : TqCacheMap<K, V> {
     private val cacheLoader: LoadingCache<K, V> = Caffeine
-            .newBuilder()
-            .also { builder ->
-                expireAfterAccess?.let { builder.expireAfterAccess(expireAfterAccess, MILLISECONDS) }
-                expireAfterWrite?.let { builder.expireAfterWrite(expireAfterWrite, MILLISECONDS) }
-                maximumSize?.let { builder.maximumSize(maximumSize) }
-                refreshAfterWrite?.let { builder.refreshAfterWrite(refreshAfterWrite, MILLISECONDS) }
-                if (recordStats) {
-                    builder.recordStats()
-                }
+        .newBuilder()
+        .also { builder ->
+            expireAfterAccess?.let { builder.expireAfterAccess(expireAfterAccess, MILLISECONDS) }
+            expireAfterWrite?.let { builder.expireAfterWrite(expireAfterWrite, MILLISECONDS) }
+            maximumSize?.let { builder.maximumSize(maximumSize) }
+            refreshAfterWrite?.let { builder.refreshAfterWrite(refreshAfterWrite, MILLISECONDS) }
+            if (recordStats) {
+                builder.recordStats()
             }
-            .build { key -> loader(key) }
+        }
+        .build { key -> loader(key) }
     private val map = cacheLoader.asMap()
     override val entries: MutableSet<MutableEntry<K, V>>
         get() = map.entries

@@ -3,9 +3,13 @@ package io.tekniq.validation
 import java.util.*
 import java.util.regex.Pattern
 
-private val emailPattern = Pattern.compile("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@" + "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\\b")
+private val emailPattern =
+    Pattern.compile("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\\b")
 
+@Deprecated("Replaced with DeniedReason")
 data class Rejection(val code: String, val field: String? = null, val message: String? = null)
+
+@Deprecated("Replaced with CheckException")
 open class ValidationException(val rejections: Collection<Rejection>, val data: Any? = null) : Exception() {
     override val message: String?
         get() = rejections.joinToString {
@@ -17,6 +21,7 @@ open class ValidationException(val rejections: Collection<Rejection>, val data: 
         }
 }
 
+@Deprecated("Replaced with TqCheck")
 open class TqValidation(val src: Any? = null, val path: String = "") {
     val rejections = mutableListOf<Rejection>()
     var tested = 0
@@ -148,15 +153,16 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         true
     }
 
-    fun requiredOrNull(field: String? = null, message: String? = null): TqValidation = test(field, "required", message) {
-        if (it is String && it.trim().isEmpty()) {
-            return@test false
-        } else if (it is Collection<*>) {
-            return@test it.isNotEmpty()
-        }
+    fun requiredOrNull(field: String? = null, message: String? = null): TqValidation =
+        test(field, "required", message) {
+            if (it is String && it.trim().isEmpty()) {
+                return@test false
+            } else if (it is Collection<*>) {
+                return@test it.isNotEmpty()
+            }
 
-        true
-    }
+            true
+        }
 
     fun date(field: String? = null, message: String? = null): TqValidation = test(field, "invalidDate", message) {
         return@test (it == null || it is Date)
@@ -169,18 +175,19 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         return@test emailPattern.matcher(it.trim().toLowerCase()).matches()
     }
 
-    fun length(field: String? = null, message: String? = null, min: Int? = null, max: Int? = null): TqValidation = test(field, "invalidLength", message) {
-        if (it !is String) {
-            return@test false
+    fun length(field: String? = null, message: String? = null, min: Int? = null, max: Int? = null): TqValidation =
+        test(field, "invalidLength", message) {
+            if (it !is String) {
+                return@test false
+            }
+            if (min != null && it.length < min) {
+                return@test false
+            }
+            if (max != null && it.length > max) {
+                return@test false
+            }
+            true
         }
-        if (min != null && it.length < min) {
-            return@test false
-        }
-        if (max != null && it.length > max) {
-            return@test false
-        }
-        true
-    }
 
     fun number(field: String? = null, message: String? = null): TqValidation = test(field, "invalidNumber", message) {
         return@test (it == null || it is Number)
@@ -190,23 +197,24 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         return@test (it == null || it is String)
     }
 
-    fun arrayOf(field: String? = null, message: String? = null, check: TqValidation.() -> Unit): TqValidation = test(field, "invalidArray", message) {
-        if (it !is Iterable<*>) {
-            return@test false
-        }
-
-        it.forEachIndexed { i, element ->
-            var name = fieldPath(field) ?: ""
-            if (name.isNotEmpty()) {
-                name += '.'
+    fun arrayOf(field: String? = null, message: String? = null, check: TqValidation.() -> Unit): TqValidation =
+        test(field, "invalidArray", message) {
+            if (it !is Iterable<*>) {
+                return@test false
             }
 
-            val validation = TqValidation(element, name + i)
-            check(validation)
-            rejections.addAll(validation.rejections)
+            it.forEachIndexed { i, element ->
+                var name = fieldPath(field) ?: ""
+                if (name.isNotEmpty()) {
+                    name += '.'
+                }
+
+                val validation = TqValidation(element, name + i)
+                check(validation)
+                rejections.addAll(validation.rejections)
+            }
+            true
         }
-        true
-    }
 
     fun stop(data: Any? = null): Nothing = throw ValidationException(rejections, data)
 
@@ -217,7 +225,12 @@ open class TqValidation(val src: Any? = null, val path: String = "") {
         return this
     }
 
-    inline fun <reified E : Any> check(code: String, field: String, message: String? = null, check: (E?) -> Boolean): TqValidation {
+    inline fun <reified E : Any> check(
+        code: String,
+        field: String,
+        message: String? = null,
+        check: (E?) -> Boolean
+    ): TqValidation {
         if (src == null) {
             rejections.add(Rejection(code, fieldPath(field), message))
             return this

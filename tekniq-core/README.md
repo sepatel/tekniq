@@ -1,46 +1,32 @@
 # tekniq-core
-A suite of tools that have no dependencies on other libraries making
-it clean and easy to use without any bloat. It provides features such as
 
+A suite of tools that have no dependencies on other libraries making it clean and easy to use without any bloat. It
+provides features such as
 
 ## **TqCache**
-A loading cache that supports concurrency, dynamic loading of content,
-access/write expiration, and more. It is written with the kotlin idiom
-and is more powerful then Java 8's computeIfAbsent.
 
-```kotlin
-// Trivial example
-val square = TqCache<Int, Int> { it * it }
-```
+The native implementation has been deprecated in favor of the Caffeine based implementation. Recommend
+reading [Caffeine](https://github.com/ben-manes/caffeine) for more details on the underlying implementation.
 
-```kotlin
-// Example reading person object from database
-data class Person(val name: String, val age: Int)
-val people = TqCache<Int, Person>(expireAfterWrite = 3000) {
-  conn.selectOne("""SELECT name, age FROM person WHERE id=?""", it) {
-    Person(getString("name"), getInt("age"))
-  }
-}
-```
-
+Please reference [tekniq-cache](https://github.com/sepatel/tekniq/tree/master/tekniq-cache) for more information about
+an enhanced loading cache implementation.
 
 ## TqConfig
-Yet another configuration concept but this one can also provide
-transformations of data for both basic and complex object types as well
-in many cases. Also provides a way to merge multiple config sources
-(such as with global property settings with local overrides) into a
-single interface.
 
-Currently supports Environment, Properties, and backing map configs with
-other modules likely to support database backed configurations and more.
+Yet another configuration concept but this one can also provide transformations of data for both basic and complex
+object types as well in many cases. Also provides a way to merge multiple config sources
+(such as with global property settings with local overrides) into a single interface.
+
+Currently supports Environment, Properties, and backing map configs with other modules likely to support database backed
+configurations and more.
 
 ```kotlin
 // Vanilla properties backed configuration
 val config = TqPropertiesConfig("/etc/myapp/config.properties")
 ```
 
-But a more interesting use case for more advanced applications would be
-to create an application configuration object with tiered checking.
+But a more interesting use case for more advanced applications would be to create an application configuration object
+with tiered checking.
 
 ```kotlin
 object MyAppConfig : TqChainConfig(
@@ -57,12 +43,11 @@ fun test() {
 }
 ```
 
-
 ## TqTracking
-A Tracking Carrier detection utility which supports determination of a
-string as being a tracking number for USPS, UPS, FEDex, or other type of
-carriers. Also provides a link to the carriers website to pull up full
-details on the tracking information as well.
+
+A Tracking Carrier detection utility which supports determination of a string as being a tracking number for USPS, UPS,
+FEDex, or other type of carriers. Also provides a link to the carriers website to pull up full details on the tracking
+information as well.
 
 ```kotlin
 val fedex = TqTracking.getTrackingType("999999999999")

@@ -1,7 +1,5 @@
 package io.tekniq.config
 
-import java.util.*
-
 interface TqConfigObserver {
     fun unregister(): Boolean
 }
@@ -97,7 +95,7 @@ abstract class TqConfig {
     }
 
     fun onChange(key: String? = null, callback: TqConfigObserver.(key: String, value: Any?, oldValue: Any?) -> Unit) =
-            observers.add(DefaultTqConfigObserver(key, observers, callback))
+        observers.add(DefaultTqConfigObserver(key, observers, callback))
 
     abstract fun <T : Any?> getValue(key: String, type: Class<T>? = null): T?
 
@@ -128,9 +126,11 @@ abstract class TqConfig {
     }
 }
 
-private class DefaultTqConfigObserver(val key: String?,
-                                      val observers: ArrayList<DefaultTqConfigObserver>,
-                                      val callback: TqConfigObserver.(String, Any?, Any?) -> Unit) : TqConfigObserver {
+private class DefaultTqConfigObserver(
+    val key: String?,
+    val observers: ArrayList<DefaultTqConfigObserver>,
+    val callback: TqConfigObserver.(String, Any?, Any?) -> Unit
+) : TqConfigObserver {
     override fun unregister() = observers.remove(this)
 }
 

@@ -1,15 +1,14 @@
 # tekniq-jdbc
-Provides extensions to the DataSource and Connection objects allowing
-one to more cleanly and easily work with the JDBC APIs with the kotlin
-idiom supported. Does not require overhead of object mappings or such.
 
-Also provided is a single connection datasource as a convenience but it
-is highly recommend that something like vibur-dbcp be used instead for
-your actual datasource needs. The extensions provided by this library
-will cause all datasources and connection instances to be used in the
-kotlin idiom as described below.
+Provides extensions to the DataSource and Connection objects allowing one to more cleanly and easily work with the JDBC
+APIs with the kotlin idiom supported. Does not require overhead of object mappings or such.
+
+Also provided is a single connection datasource as a convenience but it is highly recommend that something like
+vibur-dbcp be used instead for your actual datasource needs. The extensions provided by this library will cause all
+datasources and connection instances to be used in the kotlin idiom as described below.
 
 ## Select One
+
 Returns the first row it finds or null if no rows matched
 
 ```kotlin
@@ -25,6 +24,7 @@ val person = conn.selectOne("SELECT name, age FROM person WHERE id=?", 42) {
 ```
 
 ## Select
+
 Can either act upon or return a list of transformed results found
 
 ```kotlin
@@ -55,6 +55,7 @@ val rows = conn.insert("INSERT INTO person(name, age) VALUES(?, ?)", "John", 20)
 ```
 
 ## Callable
+
 Can either return a transformed value or act within the localized space
 
 ```kotlin
@@ -83,9 +84,9 @@ println("Executed complex method to determine star sign of $star")
 ```
 
 ## Transaction
-Create a transaction space which will auto-rollback if any exception is
-thrown. Will be committed at the end unless commitOnCompletion is set to
-false.
+
+Create a transaction space which will auto-rollback if any exception is thrown. Will be committed at the end unless
+commitOnCompletion is set to false.
 
 ```kotlin
 // only available on the datasource extension

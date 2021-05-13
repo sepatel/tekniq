@@ -1,123 +1,38 @@
 package io.tekniq.cache
 
-import io.tekniq.cache.concurrentlinkedhashmap.ConcurrentLinkedHashMap.Builder
-import java.util.AbstractMap.SimpleEntry
-import java.util.concurrent.atomic.AtomicLong
-import kotlin.collections.MutableMap.MutableEntry
-
 @Deprecated("Please use TqCaffeine from tekniq-cache library instead")
-open class TqCache<K, V>(val expireAfterAccess: Long? = null,
-                         val expireAfterWrite: Long? = null,
-                         val maximumSize: Long? = null,
-                         val recordStats: Boolean = false,
-                         private val loader: (key: K) -> V?) : TqCacheMap<K, V> {
+open class TqCache<K, V>(
+    val expireAfterAccess: Long? = null,
+    val expireAfterWrite: Long? = null,
+    val maximumSize: Long? = null,
+    val recordStats: Boolean = false,
+    private val loader: (key: K) -> V?
+) : TqCacheMap<K, V> {
+    init {
+        TODO("Switch from TqCache to TqCaffeine located in the tekniq-cache module")
+    }
+
     override val stats: TqCacheStats // read-only version of the actual data
-        get() = TqCacheStats(hits.get(), misses.get())
-    private val hits = AtomicLong()
-    private val misses = AtomicLong()
+        get() = TODO("Not yet implemented")
 
-    private val map = Builder<K, TqCacheElement<V>>().maximumWeightedCapacity(maximumSize ?: Long.MAX_VALUE).build()
-
-    override val entries: MutableSet<MutableEntry<K, V>>
-        get() = map.entries.map {
-            SimpleEntry(it.key, it.value.value)
-        }.toMutableSet()
+    override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
+        get() = TODO("Not yet implemented")
     override val keys: MutableSet<K>
-        get() = map.keys
+        get() = TODO("Not yet implemented")
     override val values: MutableCollection<V>
-        get() = map.entries.map { it.value.value }.toMutableList()
+        get() = TODO("Not yet implemented")
     override val size: Int
-        get() = map.size
+        get() = TODO("Not yet implemented")
 
-    override fun containsKey(key: K): Boolean {
-        val result = map.containsKey(key)
-        if (result) {
-            val elem = map[key]
-            val now = System.currentTimeMillis()
-            if (elem == null || (expireAfterAccess != null && now > elem.accessed + expireAfterAccess)
-                    || (expireAfterWrite != null && now > elem.created + expireAfterWrite)) {
-                map.remove(key)
-                return false
-            }
-        }
-        return result
-    }
-
-    override fun containsValue(value: V): Boolean = map.containsValue(value ?: false) // TODO: Remove entry if expired
-
-    override fun get(key: K): V? {
-        val now = System.currentTimeMillis()
-        var elem: TqCacheElement<V?>
-        if (map.containsKey(key)) {
-            elem = map[key]!!
-            if ((expireAfterAccess != null && now > elem.accessed + expireAfterAccess)
-                    || (expireAfterWrite != null && now > elem.created + expireAfterWrite)) {
-                if (recordStats) {
-                    misses.andIncrement
-                }
-                val value = loader.invoke(key)
-                if (value != null) {
-                    elem = TqCacheElement(value, now, now)
-                    map.put(key, elem)
-                } else {
-                    map.remove(key)
-                    return null
-                }
-            } else if (recordStats) {
-                hits.andIncrement
-            }
-        } else {
-            if (recordStats) {
-                misses.andIncrement
-            }
-            val value = loader.invoke(key)
-            if (value != null) {
-                elem = TqCacheElement(value, now, now)
-                map.put(key, elem)
-            } else {
-                map.remove(key)
-                return null
-            }
-        }
-
-        elem.accessed = now
-        return elem.value
-    }
-
-    override fun isEmpty(): Boolean = map.isEmpty()
-
-    override fun remove(key: K): V? = map.remove(key)?.value
-
-    override fun clear() = map.clear()
-
-    override fun put(key: K, value: V): V? {
-        val elem = map.put(key, TqCacheElement(value)) ?: return null
-        val now = System.currentTimeMillis()
-        if ((expireAfterAccess != null && now > elem.accessed + expireAfterAccess)
-                || (expireAfterWrite != null && now > elem.created + expireAfterWrite)) {
-            return null
-        }
-        return value
-    }
-
-    override fun putAll(from: Map<out K, V>) = from.entries.forEach {
-        if (it.value != null) {
-            map.put(it.key, TqCacheElement(it.value))
-        }
-    }
-
+    override fun containsKey(key: K): Boolean = TODO("Not yet implemented")
+    override fun containsValue(value: V): Boolean = TODO("Not yet implemented")
+    override fun get(key: K): V? = TODO("Not yet implemented")
+    override fun isEmpty(): Boolean = TODO("Not yet implemented")
+    override fun remove(key: K): V? = TODO("Not yet implemented")
+    override fun clear() = TODO("Not yet implemented")
+    override fun put(key: K, value: V): V? = TODO("Not yet implemented")
+    override fun putAll(from: Map<out K, V>) = TODO("Not yet implemented")
     override fun cleanUp() {
-        val now = System.currentTimeMillis()
-        val iterator = map.entries.iterator()
-        while (iterator.hasNext()) {
-            val elem = iterator.next()
-            if ((expireAfterAccess != null && now > elem.value.accessed + expireAfterAccess)
-                    || (expireAfterWrite != null && now > elem.value.created + expireAfterWrite)) {
-                iterator.remove()
-            }
-        }
+        TODO("Not yet implemented")
     }
 }
-
-private data class TqCacheElement<out V>(val value: V, var accessed: Long = System.currentTimeMillis(), val created: Long = System.currentTimeMillis())
-

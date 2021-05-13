@@ -1,5 +1,0 @@
-dependencies {
-    compile "com.fasterxml.jackson.core:jackson-core:$jackson_version"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-}
-
