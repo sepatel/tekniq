@@ -151,6 +151,17 @@ allprojects {
     }
 }
 
+subprojects {
+    tasks {
+        "beforeReleaseBuild" {
+            dependsOn("test")
+        }
+        "afterReleaseBuild" {
+            dependsOn("publish")
+        }
+    }
+}
+
 project(":tekniq-cache") {
     dependencies {
         implementation(project(":tekniq-core"))
