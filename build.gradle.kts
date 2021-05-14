@@ -43,6 +43,7 @@ tasks {
         modules.forEach { dependsOn(":$it:test") }
     }
     "afterReleaseBuild" {
+        dependsOn("publish")
         modules.forEach { dependsOn(":$it:publish") }
     }
 }
