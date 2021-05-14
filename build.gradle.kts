@@ -146,7 +146,7 @@ allprojects {
 
     signing {
         useGpgCmd()
-        isRequired = !version.toString().endsWith("-SNAPSHOT") && gradle.taskGraph.hasTask("publish")
+        isRequired = true
         sign(publishing.publications)
     }
 }
