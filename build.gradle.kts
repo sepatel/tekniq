@@ -37,6 +37,15 @@ release {
     }
 }
 
+tasks {
+    "beforeReleaseBuild" {
+        dependsOn("test")
+    }
+    "afterReleaseBuild" {
+        dependsOn("publish")
+    }
+}
+
 allprojects {
     apply(plugin = "kotlin")
     apply<JavaLibraryPlugin>()
@@ -148,17 +157,6 @@ allprojects {
         useGpgCmd()
         isRequired = true
         sign(publishing.publications)
-    }
-}
-
-subprojects {
-    tasks {
-        "beforeReleaseBuild" {
-            dependsOn("test")
-        }
-        "afterReleaseBuild" {
-            dependsOn("publish")
-        }
     }
 }
 
