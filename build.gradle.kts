@@ -38,11 +38,12 @@ release {
 }
 
 tasks {
+    val modules = listOf("tekniq-core", "tekniq-cache", "tekniq-jdbc", "tekniq-rest")
     "beforeReleaseBuild" {
-        dependsOn("test")
+        modules.forEach { dependsOn(":$it:test") }
     }
     "afterReleaseBuild" {
-        dependsOn("publish")
+        modules.forEach { dependsOn(":$it:publish") }
     }
 }
 
