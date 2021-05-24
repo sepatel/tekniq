@@ -83,23 +83,23 @@ object TqCheckSpek : Spek({
 
         it("listOf checks by pojo") {
             pojoBased.listOf(PojoCheckBean::list) {
-                it.number("id")
-                it.string("text")
+                number("id")
+                string("text")
             }
             assertTrue(pojoBased.reasons.isEmpty())
         }
 
         it("listOf undefined field") {
             pojoBased.listOf("listed") {
-                it.number("id")
-                it.string("text")
+                number("id")
+                string("text")
             }
             assertTrue(pojoBased.reasons.isNotEmpty())
         }
         it("listOf undefined field w/o required") {
             pojoBased.listOf("listed", ifDefined = true) {
-                it.number("id")
-                it.string("text")
+                number("id")
+                string("text")
             }
             assertTrue(pojoBased.reasons.isEmpty())
         }
@@ -114,36 +114,36 @@ object TqCheckSpek : Spek({
 
         it("works with all conditions passing") {
             check.and {
-                it.required(PojoCheckBean::id)
-                it.required(PojoCheckBean::name)
-                it.required(PojoCheckBean::emails)
+                required(PojoCheckBean::id)
+                required(PojoCheckBean::name)
+                required(PojoCheckBean::emails)
             }
             assertTrue(check.reasons.isEmpty())
         }
 
         it("works with all conditions failing") {
             check.and {
-                it.required(FakeInfo::fake)
-                it.required("anotherFake")
-                it.required(FakeInfo::listing)
+                required(FakeInfo::fake)
+                required("anotherFake")
+                required(FakeInfo::listing)
             }
             assertTrue(check.reasons.isNotEmpty())
         }
 
         it("works with first condition failing") {
             check.and {
-                it.required(FakeInfo::fake)
-                it.required(PojoCheckBean::name)
-                it.required(PojoCheckBean::emails)
+                required(FakeInfo::fake)
+                required(PojoCheckBean::name)
+                required(PojoCheckBean::emails)
             }
             assertTrue(check.reasons.isNotEmpty())
         }
 
         it("works with last condition failing") {
             check.and {
-                it.required(PojoCheckBean::id)
-                it.required(PojoCheckBean::name)
-                it.required(FakeInfo::mappings)
+                required(PojoCheckBean::id)
+                required(PojoCheckBean::name)
+                required(FakeInfo::mappings)
             }
             assertTrue(check.reasons.isNotEmpty())
         }
@@ -158,36 +158,36 @@ object TqCheckSpek : Spek({
 
         it("works with all conditions passing") {
             check.or {
-                it.required(PojoCheckBean::id)
-                it.required(PojoCheckBean::name)
-                it.required(PojoCheckBean::emails)
+                required(PojoCheckBean::id)
+                required(PojoCheckBean::name)
+                required(PojoCheckBean::emails)
             }
             assertTrue(check.reasons.isEmpty())
         }
 
         it("works with all conditions failing") {
             check.or {
-                it.required(FakeInfo::fake)
-                it.required("anotherFake")
-                it.required(FakeInfo::listing)
+                required(FakeInfo::fake)
+                required("anotherFake")
+                required(FakeInfo::listing)
             }
             assertTrue(check.reasons.isNotEmpty())
         }
 
         it("works with first condition failing") {
             check.or {
-                it.required(FakeInfo::fake)
-                it.required(PojoCheckBean::name)
-                it.required(PojoCheckBean::emails)
+                required(FakeInfo::fake)
+                required(PojoCheckBean::name)
+                required(PojoCheckBean::emails)
             }
             assertTrue(check.reasons.isEmpty())
         }
 
         it("works with last condition failing") {
             check.or {
-                it.required(PojoCheckBean::id)
-                it.required(PojoCheckBean::name)
-                it.required(FakeInfo::mappings)
+                required(PojoCheckBean::id)
+                required(PojoCheckBean::name)
+                required(FakeInfo::mappings)
             }
             assertTrue(check.reasons.isEmpty())
         }

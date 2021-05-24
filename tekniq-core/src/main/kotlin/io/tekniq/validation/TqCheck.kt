@@ -57,8 +57,8 @@ open class TqCheck(
     fun get(field: String? = null) = src?.let { getValue(it, field) }
 
     // Logical Operators
-    fun and(message: String? = null, check: (TqCheck) -> Unit): TqCheck {
-        val validation = TqCheck(src)
+    fun and(message: String? = null, check: TqCheck.() -> Unit): TqCheck {
+        val validation = TqCheck(src, at = at, path = path, translator = translator)
         check(validation)
 
         if (validation.reasons.isNotEmpty()) {
@@ -69,8 +69,8 @@ open class TqCheck(
         return this
     }
 
-    fun or(message: String? = null, check: (TqCheck) -> Unit): TqCheck {
-        val validation = TqCheck(src)
+    fun or(message: String? = null, check: TqCheck.() -> Unit): TqCheck {
+        val validation = TqCheck(src, at = at, path = path, translator = translator)
         check(validation)
 
         if (validation.passed == 0) {
@@ -121,14 +121,14 @@ open class TqCheck(
         return this
     }
 
-    fun listOf(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false, check: (TqCheck) -> Unit) =
+    fun listOf(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false, check: TqCheck.() -> Unit) =
         listOf(field.name, message, ifDefined, check)
 
     fun listOf(
         field: String? = null,
         message: String? = null,
         ifDefined: Boolean = false,
-        check: (TqCheck) -> Unit
+        check: TqCheck.() -> Unit
     ): TqCheck =
         test("Invalid", field, message, ifDefined) {
             if (it !is Iterable<*>) {
@@ -139,7 +139,7 @@ open class TqCheck(
                 var name = fieldPath(field) ?: ""
                 if (name.isNotEmpty()) name += '.'
 
-                val validation = TqCheck(element, name + i)
+                val validation = TqCheck(element, at = at, path = name + i, translator = translator)
                 check(validation)
                 _reasons += validation.reasons
             }
@@ -252,6 +252,11 @@ open class TqCheck(
     }
 
     // Flow Control
+    fun denyImmediately(code: String, field: String? = null, message: String? = null): Nothing {
+        deny(code, field, message)
+        stop()
+    }
+
     fun stop(): Nothing = throw CheckException(_reasons)
 
     fun stopOnDenials(): TqCheck {

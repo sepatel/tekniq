@@ -28,7 +28,7 @@ release {
     failOnPublishNeeded = true
     failOnSnapshotDependencies = true
     failOnUnversionedFiles = true
-    failOnUpdateNeeded = true
+    failOnUpdateNeeded = false
     revertOnFail = true
 
     git {
