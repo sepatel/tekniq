@@ -212,6 +212,14 @@ open class TqCheck(
             true
         }
 
+    fun notBlank(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false) =
+        notBlank(field.name, message, ifDefined)
+
+    fun notBlank(field: String? = null, message: String? = null, ifDefined: Boolean = false): TqCheck =
+        test("Blank", field, message, ifDefined) {
+            return@test (it == null || it.toString().trim().isEmpty())
+        }
+
     fun number(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false) =
         number(field.name, message, ifDefined)
 
