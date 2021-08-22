@@ -10,7 +10,7 @@ configurations, tracking tools, and more.
 **Gradle**
 
 ```
-implementation "io.tekniq:tekniq-core:0.13.0"
+implementation "io.tekniq:tekniq-core:0.13.1"
 ```
 
 **Maven Dependency**
@@ -19,7 +19,7 @@ implementation "io.tekniq:tekniq-core:0.13.0"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-core</artifactId>
-    <version>0.13.0</version>
+    <version>0.13.1</version>
 </dependency>
 ```
 
@@ -31,7 +31,7 @@ advanced loading cache implementation.
 **Gradle**
 
 ```
-implementation "io.tekniq:tekniq-cache:0.13.0"
+implementation "io.tekniq:tekniq-cache:0.13.1"
 ```
 
 **Maven Dependency**
@@ -40,7 +40,7 @@ implementation "io.tekniq:tekniq-cache:0.13.0"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-cache</artifactId>
-    <version>0.13.0</version>
+    <version>0.13.1</version>
 </dependency>
 ```
 
@@ -52,7 +52,7 @@ APIs with the kotlin idiom supported. Does not require overhead of object mappin
 **Gradle**
 
 ```
-implementation "io.tekniq:tekniq-jdbc:0.13.0"
+implementation "io.tekniq:tekniq-jdbc:0.13.1"
 ```
 
 **Maven Dependency**
@@ -61,7 +61,7 @@ implementation "io.tekniq:tekniq-jdbc:0.13.0"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-jdbc</artifactId>
-    <version>0.13.0</version>
+    <version>0.13.1</version>
 </dependency>
 ```
 
@@ -72,7 +72,7 @@ A tool utilizing jackson-mapper for making RESTful calls to web services.
 **Gradle**
 
 ```
-implementation "io.tekniq:tekniq-rest:0.13.0"
+implementation "io.tekniq:tekniq-rest:0.13.1"
 ```
 
 **Maven Dependency**
@@ -81,6 +81,6 @@ implementation "io.tekniq:tekniq-rest:0.13.0"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-rest</artifactId>
-    <version>0.13.0</version>
+    <version>0.13.1</version>
 </dependency>
 ```

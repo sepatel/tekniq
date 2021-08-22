@@ -24,8 +24,8 @@ fun ReleaseExtension.git(configureFn: GitAdapter.GitConfig.() -> Unit) {
     (propertyMissing("git") as GitAdapter.GitConfig).configureFn()
 }
 release {
-    failOnCommitNeeded = false
-    failOnPublishNeeded = true
+    failOnCommitNeeded = true
+    failOnPublishNeeded = false
     failOnSnapshotDependencies = true
     failOnUnversionedFiles = true
     failOnUpdateNeeded = false

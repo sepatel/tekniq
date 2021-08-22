@@ -4,6 +4,7 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.FileNotFoundException
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.fail
 
 object TqPropertiesConfigSpek : Spek({
@@ -65,6 +66,23 @@ object TqPropertiesConfigSpek : Spek({
             } catch (e: FileNotFoundException) {
                 // success
             }
+        }
+
+        it("correctly handles special getType conversions like getInt") {
+            val config = try {
+                TqPropertiesConfig("src/test/resources/io/tekniq/config/test.properties")
+            } catch (e: FileNotFoundException) {
+                TqPropertiesConfig("tekniq-core/src/test/resources/io/tekniq/config/test.properties")
+            }
+
+            assertEquals("42", config.get("age"))
+            assertEquals(42, config.getInt("age"))
+            assertEquals(42.0, config.getDouble("age"))
+            assertNull(config.get("fake"))
+            assertNull(config.getInt("fake"))
+            assertEquals(3, config.getInt("cost"))
+            assertEquals(3.14, config.getDouble("cost"))
+            assertEquals("3.14", config.get("cost"))
         }
     }
 })

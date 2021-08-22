@@ -2,6 +2,7 @@ package io.tekniq.validation
 
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.net.URL
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -230,6 +231,29 @@ object TqCheckSpek : Spek({
                     .required("purple", "Mine is {{emails[0]}}")
                     .reasons.first().message
             )
+        }
+    }
+
+    describe("URL Verification") {
+        data class UrlContainingBean(val name: String, val website: String, val url: URL)
+        it("Shall verify the happy path case") {
+            val good = UrlContainingBean("Good", "https://www.google.com", URL("https://www.google.com"))
+            val reasons = TqCheck(good)
+                .url(UrlContainingBean::website)
+                .url(UrlContainingBean::url)
+                .reasons
+            assertTrue(reasons.isEmpty())
+        }
+
+        it("Shall identify invalid string urls") {
+            val badWebsite = UrlContainingBean("Good", "www.google.com", URL("https://www.google.com"))
+            val reasons = TqCheck(badWebsite)
+                .url(UrlContainingBean::website)
+                .url(UrlContainingBean::url)
+                .reasons
+            assertTrue(reasons.isNotEmpty())
+            assertEquals(1, reasons.size)
+            assertEquals("InvalidURL website", reasons.first().code)
         }
     }
 })

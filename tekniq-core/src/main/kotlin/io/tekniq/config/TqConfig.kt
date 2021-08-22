@@ -30,68 +30,48 @@ abstract class TqConfig {
     }
 
     open fun getDouble(key: String, defaultValue: Double? = null): Double? {
-        if (!contains(key)) {
-            return defaultValue
-        }
-        val any = get<Any>(key)
+        val any = get<Any>(key) ?: return defaultValue
         when (any) {
-            null -> return null
             is Number -> return any.toDouble()
             is String -> return any.toDouble()
         }
-        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Double")
+        throw IllegalStateException("Type ${any.javaClass.name} cannot be converted to Double")
     }
 
     open fun getFloat(key: String, defaultValue: Float? = null): Float? {
-        if (!contains(key)) {
-            return defaultValue
-        }
-        val any = get<Any>(key)
+        val any = get<Any>(key) ?: return defaultValue
         when (any) {
-            null -> return null
             is Number -> return any.toFloat()
             is String -> return any.toFloat()
         }
-        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Float")
+        throw IllegalStateException("Type ${any.javaClass.name} cannot be converted to Float")
     }
 
     open fun getInt(key: String, defaultValue: Int? = null): Int? {
-        if (!contains(key)) {
-            return defaultValue
-        }
-        val any = get<Any>(key)
+        val any = get<Any>(key) ?: return defaultValue
         when (any) {
-            null -> return null
             is Number -> return any.toInt()
-            is String -> return any.toInt()
+            is String -> return any.toDouble().toInt()
         }
-        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Int")
+        throw IllegalStateException("Type ${any.javaClass.name} cannot be converted to Int")
     }
 
     open fun getLong(key: String, defaultValue: Long? = null): Long? {
-        if (!contains(key)) {
-            return defaultValue
-        }
-        val any = get<Any>(key)
+        val any = get<Any>(key) ?: return defaultValue
         when (any) {
-            null -> return null
             is Number -> return any.toLong()
-            is String -> return any.toLong()
+            is String -> return any.toDouble().toLong()
         }
-        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Long")
+        throw IllegalStateException("Type ${any.javaClass.name} cannot be converted to Long")
     }
 
     open fun getShort(key: String, defaultValue: Short? = null): Short? {
-        if (!contains(key)) {
-            return defaultValue
-        }
-        val any = get<Any>(key)
+        val any = get<Any>(key) ?: return defaultValue
         when (any) {
-            null -> return null
             is Number -> return any.toShort()
-            is String -> return any.toShort()
+            is String -> return any.toDouble().toInt().toShort()
         }
-        throw IllegalStateException("Type ${any?.javaClass?.name} cannot be converted to Short")
+        throw IllegalStateException("Type ${any.javaClass.name} cannot be converted to Short")
     }
 
     fun onChange(key: String? = null, callback: TqConfigObserver.(key: String, value: Any?, oldValue: Any?) -> Unit) =
@@ -133,4 +113,3 @@ private class DefaultTqConfigObserver(
 ) : TqConfigObserver {
     override fun unregister() = observers.remove(this)
 }
-

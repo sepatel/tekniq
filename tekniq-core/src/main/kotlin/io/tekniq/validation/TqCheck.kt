@@ -1,5 +1,7 @@
 package io.tekniq.validation
 
+import java.net.MalformedURLException
+import java.net.URL
 import java.time.temporal.Temporal
 import java.util.*
 import kotlin.reflect.KProperty
@@ -243,6 +245,20 @@ open class TqCheck(
         test("InvalidOID", field, message, ifDefined) {
             if (it !is String) return@test false
             return@test oidPattern.matches(it.trim())
+        }
+
+    fun url(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false): TqCheck =
+        url(field.name, message, ifDefined)
+    fun url(field: String? = null, message: String? = null, ifDefined: Boolean = false): TqCheck =
+        test("InvalidURL", field, message, ifDefined) {
+            if (it is URL) return@test true
+            if (it !is String) return@test false
+            try {
+                URL(it)
+                return@test true
+            } catch(e: java.net.MalformedURLException) {
+                return@test false
+            }
         }
 
     fun uuid(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false): TqCheck =
