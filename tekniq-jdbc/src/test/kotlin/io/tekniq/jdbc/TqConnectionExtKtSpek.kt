@@ -34,7 +34,7 @@ object TqConnectionExtKtSpek : Spek({
                 val result = subject.selectOne("SELECT * FROM issue01 WHERE id=1") {
                     Triple(getDate("date"), getTime("time"), getTimestamp("ts"))
                 } ?: fail("Expected row back")
-                assertEquals(localDate, result!!.first.toLocalDate())
+                assertEquals(localDate, result.first.toLocalDate())
                 assertEquals(localTime, result.second.toLocalTime())
                 assertEquals(localDateTime, result.third.toLocalDateTime())
             }

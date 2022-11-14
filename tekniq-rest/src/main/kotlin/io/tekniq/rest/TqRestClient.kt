@@ -2,7 +2,9 @@ package io.tekniq.rest
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.SingletonSupport
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -19,7 +21,16 @@ import kotlin.system.measureTimeMillis
 @Suppress("unused")
 open class TqRestClient(
     val logHandler: RestLogHandler = NoOpRestLogHandler,
-    val mapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule())
+    val mapper: ObjectMapper = ObjectMapper().registerModule(
+        KotlinModule.Builder()
+            .withReflectionCacheSize(512)
+            .configure(KotlinFeature.NullToEmptyCollection, false)
+            .configure(KotlinFeature.NullToEmptyMap, false)
+            .configure(KotlinFeature.NullIsSameAsDefault, false)
+            .configure(KotlinFeature.SingletonSupport, false)
+            .configure(KotlinFeature.StrictNullChecks, false)
+            .build()
+    )
         .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
         .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
@@ -151,8 +162,9 @@ data class TqResponse(
 
     fun headers(): Map<String, Any> {
         return headers.mapValues {
-            if (it is Array<*> && it.size == 1) {
-                return@mapValues it[0]!!
+            val value = it.value
+            if (value is Array<*> && value.size == 1) {
+                return@mapValues value[0]!!
             }
             it
         }

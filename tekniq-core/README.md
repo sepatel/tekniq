@@ -3,14 +3,6 @@
 A suite of tools that have no dependencies on other libraries making it clean and easy to use without any bloat. It
 provides features such as
 
-## **TqCache**
-
-The native implementation has been deprecated in favor of the Caffeine based implementation. Recommend
-reading [Caffeine](https://github.com/ben-manes/caffeine) for more details on the underlying implementation.
-
-Please reference [tekniq-cache](https://github.com/sepatel/tekniq/tree/master/tekniq-cache) for more information about
-an enhanced loading cache implementation.
-
 ## TqConfig
 
 Yet another configuration concept but this one can also provide transformations of data for both basic and complex

@@ -1,6 +1,5 @@
 package io.tekniq.validation
 
-import java.net.MalformedURLException
 import java.net.URL
 import java.time.temporal.Temporal
 import java.util.*
@@ -56,6 +55,7 @@ open class TqCheck(
         get() = _reasons
 
     // Access the value directly
+    fun get(field: KProperty<*>) = get(field.name)
     fun get(field: String? = null) = src?.let { getValue(it, field) }
 
     // Logical Operators
@@ -93,6 +93,7 @@ open class TqCheck(
                     if (!v.containsKey(it)) return false
                     value = v[it]
                 }
+
                 else -> try {
                     val capitalized = it.replaceFirstChar { char ->
                         if (char.isLowerCase()) char.titlecase(Locale.getDefault())
@@ -111,12 +112,14 @@ open class TqCheck(
         return true
     }
 
+    fun ifDefined(field: KProperty<*>, action: () -> Unit) = ifDefined(field.name, action)
     fun ifDefined(field: String? = null, action: () -> Unit): TqCheck {
         if (!isDefined(field)) return this
         action.invoke()
         return this
     }
 
+    fun ifNotDefined(field: KProperty<*>, action: () -> Unit) = ifNotDefined(field.name, action)
     fun ifNotDefined(field: String? = null, action: () -> Unit): TqCheck {
         if (isDefined(field)) return this
         action.invoke()
@@ -249,6 +252,7 @@ open class TqCheck(
 
     fun url(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false): TqCheck =
         url(field.name, message, ifDefined)
+
     fun url(field: String? = null, message: String? = null, ifDefined: Boolean = false): TqCheck =
         test("InvalidURL", field, message, ifDefined) {
             if (it is URL) return@test true
@@ -256,7 +260,7 @@ open class TqCheck(
             try {
                 URL(it)
                 return@test true
-            } catch(e: java.net.MalformedURLException) {
+            } catch (e: java.net.MalformedURLException) {
                 return@test false
             }
         }
@@ -287,6 +291,14 @@ open class TqCheck(
         if (_reasons.isNotEmpty()) throw CheckException(_reasons)
         return this
     }
+
+    protected fun test(
+        code: String,
+        field: KProperty<*>,
+        message: String? = null,
+        ifDefined: Boolean = false,
+        check: (Any?) -> Boolean
+    ) = test(code, field.name, message, ifDefined, check)
 
     protected open fun test(
         code: String,

@@ -5,8 +5,6 @@ import com.github.benmanes.caffeine.cache.LoadingCache
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.collections.MutableMap.MutableEntry
 
-typealias TqCaffeine<K, V> = TqLoadingCache<K, V>
-
 open class TqLoadingCache<K, V>(
     val expireAfterAccess: Long? = null,
     val expireAfterWrite: Long? = null,
@@ -18,13 +16,11 @@ open class TqLoadingCache<K, V>(
     private val cacheLoader: LoadingCache<K, V> = Caffeine
         .newBuilder()
         .also { builder ->
-            expireAfterAccess?.let { builder.expireAfterAccess(expireAfterAccess, MILLISECONDS) }
-            expireAfterWrite?.let { builder.expireAfterWrite(expireAfterWrite, MILLISECONDS) }
-            maximumSize?.let { builder.maximumSize(maximumSize) }
-            refreshAfterWrite?.let { builder.refreshAfterWrite(refreshAfterWrite, MILLISECONDS) }
-            if (recordStats) {
-                builder.recordStats()
-            }
+            expireAfterAccess?.also { builder.expireAfterAccess(expireAfterAccess, MILLISECONDS) }
+            expireAfterWrite?.also { builder.expireAfterWrite(expireAfterWrite, MILLISECONDS) }
+            maximumSize?.also { builder.maximumSize(maximumSize) }
+            refreshAfterWrite?.also { builder.refreshAfterWrite(refreshAfterWrite, MILLISECONDS) }
+            if (recordStats) builder.recordStats()
         }
         .build { key -> loader(key) }
     private val map = cacheLoader.asMap()
@@ -35,7 +31,17 @@ open class TqLoadingCache<K, V>(
     override val size: Int
         get() = cacheLoader.estimatedSize().toInt()
     override val stats: TqCacheStats
-        get() = cacheLoader.stats().let { TqCacheStats(it.hitCount(), it.missCount()) }
+        get() = cacheLoader.stats().let {
+            TqCacheStats(
+                hitCount = it.hitCount(),
+                missCount = it.missCount(),
+                loadSuccessCount = it.loadSuccessCount(),
+                loadFailureCount = it.loadFailureCount(),
+                totalLoadTime = it.totalLoadTime(),
+                evictionCount = it.evictionCount(),
+                evictionWeight = it.evictionWeight(),
+            )
+        }
     override val values: MutableCollection<V>
         get() = map.values
 

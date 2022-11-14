@@ -31,6 +31,7 @@ object TqGlob {
             when (it) {
                 '/', '$', '^', '+', '.', '(', ')', '=', '!', '|' ->
                     regexPattern.append('\\').append(it)
+
                 '?' -> if (extended) regexPattern.append('.') else regexPattern.append("\\?")
                 '[', ']' -> if (extended) regexPattern.append(it) else regexPattern.append('\\').append(it)
                 '{' -> if (extended) regexPattern.append('(').also { inGroup = true } else regexPattern.append("\\{")
@@ -39,6 +40,7 @@ object TqGlob {
                     if (inGroup) regexPattern.append('|')
                     else regexPattern.append('\\').append(it)
                 }
+
                 '*' -> {
                     starCount++
                     if (!globstar) regexPattern.append(".*")
@@ -54,6 +56,7 @@ object TqGlob {
                         }
                     }
                 }
+
                 else -> regexPattern.append(it)
             }
             if (it != '*') prev = it

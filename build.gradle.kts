@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.6.10" apply false
+    kotlin("jvm") version "1.7.21" apply false
     id("net.researchgate.release") version "2.8.1"
     `java-library`
     signing
@@ -74,15 +74,13 @@ allprojects {
 
     tasks {
         withType<KotlinCompile> {
-            sourceCompatibility = JavaVersion.VERSION_1_8.name
-            targetCompatibility = JavaVersion.VERSION_1_8.name
-
             kotlinOptions {
-                jvmTarget = "1.8"
-                apiVersion = "1.5"
-                languageVersion = "1.5"
+                jvmTarget = JavaVersion.VERSION_11.majorVersion
+                apiVersion = "1.7"
+                languageVersion = "1.7"
                 javaParameters = true
                 suppressWarnings = true
+                freeCompilerArgs = listOf("-Xallow-result-return-type")
             }
         }
 
@@ -99,7 +97,7 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(8))
+            languageVersion.set(JavaLanguageVersion.of(JavaVersion.VERSION_11.majorVersion))
         }
         withJavadocJar()
         withSourcesJar()
