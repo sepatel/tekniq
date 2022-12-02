@@ -22,6 +22,6 @@ private fun <T> ResultSet.returnNullable(x: T): T? = when (wasNull()) {
     false -> x
 }
 
-inline fun ResultSet.forEach(action: ResultSet.() -> Unit) {
+inline fun ResultSet.forEach(action: (rs: ResultSet) -> Unit) {
     while (next()) action(this)
 }

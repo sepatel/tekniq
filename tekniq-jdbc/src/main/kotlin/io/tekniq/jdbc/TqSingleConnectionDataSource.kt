@@ -20,7 +20,7 @@ open class TqSingleConnectionDataSource(
     autoCommit: Boolean = true
 ) : DataSource {
     private val connection: Connection = DriverManager.getConnection(url, username, password)
-        .apply { setAutoCommit(autoCommit) }
+        .also { it.autoCommit = autoCommit }
 
     fun close() {
         connection.close()
@@ -60,7 +60,7 @@ open class TqSingleConnectionDataSource(
 
     private class UncloseableConnection(connection: Connection) : Connection by connection {
         override fun close() {
+            // intentional noop
         }
     }
 }
-

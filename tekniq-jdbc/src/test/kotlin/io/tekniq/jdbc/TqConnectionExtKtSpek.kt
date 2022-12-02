@@ -31,8 +31,8 @@ object TqConnectionExtKtSpek : Spek({
             val localDateTime = LocalDateTime.of(localDate, localTime)
             subject.insert("INSERT INTO issue01 VALUES(1, ?, ?, ?)", localDate, localTime, localDateTime)
             run {
-                val result = subject.selectOne("SELECT * FROM issue01 WHERE id=1") {
-                    Triple(getDate("date"), getTime("time"), getTimestamp("ts"))
+                val result = subject.selectOne("SELECT * FROM issue01 WHERE id=1") { rs ->
+                    Triple(rs.getDate("date"), rs.getTime("time"), rs.getTimestamp("ts"))
                 } ?: fail("Expected row back")
                 assertEquals(localDate, result.first.toLocalDate())
                 assertEquals(localTime, result.second.toLocalTime())
@@ -72,19 +72,19 @@ object TqConnectionExtKtSpek : Spek({
             run {
                 //can efficiently act upon multiple rows of data without mapping and memory overhead
                 val sql = "SELECT id, name FROM spektest"
-                val x = subject.select(sql) {
+                val x = subject.select(sql) { rs ->
                     // returns a Unit not a FooRow
-                    FooRow(getInt("id"), getString("name"))
+                    FooRow(rs.getInt("id"), rs.getString("name"))
                 }
                 val y = subject.select<FooRow>(sql) {
                     // returns a List<FooRow>
-                    FooRow(getInt("id"), getString("name"))
+                    FooRow(it.getInt("id"), it.getString("name"))
                 }
                 assertNotEquals<Any>(x, y)
 
                 val z = subject.select(sql) {
                     // returns a Unit not a FooRow
-                    FooRow(getInt("id"), getString("name"))
+                    FooRow(it.getInt("id"), it.getString("name"))
                 }
                 assertEquals(x, z)
                 assertNotEquals<Any>(y, z)
@@ -99,8 +99,8 @@ object TqConnectionExtKtSpek : Spek({
             subject.select("SELECT * from spektest")
                 .also { assertTrue(it.size() == 2, "Size is ${it.size()}") }
                 .forEach {
-                    val row = mapper(this)
-                    assertEquals(getInt(1), row.id)
+                    val row = mapper(it)
+                    assertEquals(it.getInt(1), row.id)
                 }
         }
     }

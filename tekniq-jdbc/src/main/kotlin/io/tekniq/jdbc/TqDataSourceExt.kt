@@ -32,7 +32,7 @@ inline fun <T> DataSource.transaction(
     }
 }
 
-inline fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): T? {
+inline fun <T> DataSource.call(sql: String, action: (call: CallableStatement) -> T): T? {
     connection.use { conn ->
         conn.autoCommit = false
         try {
@@ -49,13 +49,13 @@ inline fun <T> DataSource.call(sql: String, action: CallableStatement.() -> T): 
 inline fun DataSource.select(sql: String, vararg params: Any?): CachedRowSet =
     connection.use { it.select(sql, *params) }
 
-inline fun DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit) =
+inline fun DataSource.select(sql: String, vararg params: Any?, action: (rs: ResultSet) -> Unit) =
     connection.use { it.select(sql, *params, action = action) }
 
-inline fun <T> DataSource.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> =
+inline fun <T> DataSource.select(sql: String, vararg params: Any?, action: (rs: ResultSet) -> T): List<T> =
     connection.use { it.select(sql, *params, action = action) }
 
-inline fun <T> DataSource.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? =
+inline fun <T> DataSource.selectOne(sql: String, vararg params: Any?, action: (rs: ResultSet) -> T): T? =
     connection.use { it.selectOne(sql, *params, action = action) }
 
 inline fun DataSource.delete(sql: String, vararg params: Any?): Int = update(sql, *params)

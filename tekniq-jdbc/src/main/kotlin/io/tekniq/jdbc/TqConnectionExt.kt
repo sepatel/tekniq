@@ -22,7 +22,7 @@ inline fun Connection.select(sql: String, vararg params: Any?): CachedRowSet = p
         }
     }
 
-inline fun Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> Unit) = prepareStatement(sql)
+inline fun Connection.select(sql: String, vararg params: Any?, action: (rs: ResultSet) -> Unit) = prepareStatement(sql)
     .also { applyParams(it, *params) }
     .use { stmt ->
         stmt.executeQuery().use { rs ->
@@ -32,7 +32,7 @@ inline fun Connection.select(sql: String, vararg params: Any?, action: ResultSet
         }
     }
 
-inline fun <T> Connection.select(sql: String, vararg params: Any?, action: ResultSet.() -> T): List<T> {
+inline fun <T> Connection.select(sql: String, vararg params: Any?, action: (rs: ResultSet) -> T): List<T> {
     val list = mutableListOf<T>()
     prepareStatement(sql)
         .also { applyParams(it, *params) }
@@ -46,7 +46,7 @@ inline fun <T> Connection.select(sql: String, vararg params: Any?, action: Resul
     return list
 }
 
-inline fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: ResultSet.() -> T): T? {
+inline fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: (rs: ResultSet) -> T): T? {
     var value: T? = null
     prepareStatement(sql)
         .also { applyParams(it, *params) }
@@ -83,7 +83,7 @@ fun Connection.insertReturnKey(sql: String, vararg params: Any?): String? =
             return answer
         }
 
-inline fun <T> Connection.call(sql: String, action: CallableStatement.() -> T): T? =
+inline fun <T> Connection.call(sql: String, action: (call: CallableStatement) -> T): T? =
     prepareCall(sql).use { action.invoke(it) }
 
 fun applyParams(stmt: PreparedStatement, vararg params: Any?) = stmt.also {

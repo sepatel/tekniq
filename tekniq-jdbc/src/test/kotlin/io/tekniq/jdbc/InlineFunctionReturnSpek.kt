@@ -25,9 +25,9 @@ object InlineFunctionReturnSpek : Spek({
             var answer = "wrong"
             conn.select("SELECT * from (VALUES(0))") outerLoop@{
                 conn.select("SELECT id, s FROM dataone") {
-                    val s = getString("s")
-                    conn.select("SELECT color FROM dataoption WHERE dataone_id=?", getInt("id")) {
-                        if (getString("color") == "Transparent") {
+                    val s = it.getString("s")
+                    conn.select("SELECT color FROM dataoption WHERE dataone_id=?", it.getInt("id")) {
+                        if (it.getString("color") == "Transparent") {
                             answer = s
                             return@outerLoop
                         }
