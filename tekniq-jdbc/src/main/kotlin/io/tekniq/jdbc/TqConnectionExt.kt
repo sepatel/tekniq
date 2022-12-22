@@ -51,7 +51,6 @@ inline fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: (r
     prepareStatement(sql)
         .also { applyParams(it, *params) }
         .use { stmt ->
-            params.forEachIndexed { i, any -> stmt.setObject(i + 1, any) }
             stmt.executeQuery().use { rs ->
                 if (rs.next()) {
                     value = action.invoke(rs)
