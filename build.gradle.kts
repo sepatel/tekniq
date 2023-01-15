@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.7.21" apply false
+    kotlin("jvm") version "1.8.0" apply false
     id("net.researchgate.release") version "2.8.1"
     `java-library`
     signing

@@ -22,7 +22,7 @@ inline fun <T> DataSource.transaction(
                 conn.commit()
             }
             return result
-        } catch (e: Exception) {
+        } catch (@SuppressWarnings("TooGenericExceptionCaught") e: Exception) {
             if (commitOnCompletion) {
                 // control over commit/rollback is being handled externally
                 conn.rollback()
@@ -39,7 +39,7 @@ inline fun <T> DataSource.call(sql: String, action: (call: CallableStatement) ->
             val x = conn.call(sql, action = action)
             conn.commit()
             return x
-        } catch (e: Exception) {
+        } catch (@SuppressWarnings("TooGenericExceptionCaught") e: Exception) {
             conn.rollback()
             throw e
         }
@@ -60,13 +60,26 @@ inline fun <T> DataSource.selectOne(sql: String, vararg params: Any?, action: (r
 
 inline fun DataSource.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
 inline fun DataSource.insert(sql: String, vararg params: Any?): Int = update(sql, *params)
+
 inline fun DataSource.update(sql: String, vararg params: Any?): Int = connection.use { conn ->
     conn.autoCommit = false
     try {
         val effected = conn.update(sql, *params)
         conn.commit()
         return effected
-    } catch (e: Exception) {
+    } catch (@SuppressWarnings("TooGenericExceptionCaught") e: Exception) {
+        conn.rollback()
+        throw e
+    }
+}
+
+inline fun DataSource.insertReturnKey(sql: String, vararg params: Any?): String? = connection.use { conn ->
+    conn.autoCommit = false
+    try {
+        val effected = conn.insertReturnKey(sql, *params)
+        conn.commit()
+        return effected
+    } catch (@SuppressWarnings("TooGenericExceptionCaught") e: Exception) {
         conn.rollback()
         throw e
     }

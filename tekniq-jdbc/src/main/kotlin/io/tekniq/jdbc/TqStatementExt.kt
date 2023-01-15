@@ -1,10 +1,29 @@
-@file:Suppress("unused")
+@file:SuppressWarnings("TooManyFunctions")
 
 package io.tekniq.jdbc
 
-import java.sql.CallableStatement
-import java.sql.PreparedStatement
-import java.sql.Types
+import java.sql.*
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZonedDateTime
+import java.util.*
+import java.util.Date
+
+fun PreparedStatement.applyParams(vararg params: Any?) = params.forEachIndexed { i, any ->
+    when (any) {
+        is Time -> setTime(i + 1, any) // is also a java.util.Date so treat naturally instead
+        is LocalTime -> setTime(i + 1, Time.valueOf(any))
+        is java.sql.Date -> setDate(i + 1, any) // is also a java.util.Date so treat naturally instead
+        is LocalDate -> setDate(i + 1, java.sql.Date.valueOf(any))
+        is ZonedDateTime -> setTimestamp(i + 1, Timestamp(any.toInstant().toEpochMilli()))
+        is LocalDateTime -> setTimestamp(i + 1, Timestamp.valueOf(any))
+        is Date -> setTimestamp(i + 1, Timestamp(any.time))
+        is Calendar -> setTimestamp(i + 1, Timestamp(any.timeInMillis))
+        else -> setObject(i + 1, any)
+    }
+}
+
 
 // Prepared Statement Extensions
 fun PreparedStatement.setBooleanNull(index: Int, x: Boolean?) =

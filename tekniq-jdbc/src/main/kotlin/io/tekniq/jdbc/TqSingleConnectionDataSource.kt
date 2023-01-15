@@ -9,7 +9,7 @@ import javax.sql.DataSource
 
 /**
  * Used mostly for testing purposes. Cannot imagine a real use case for a single connection data source otherwise.
- * True datasource libraries like vibur-dbcp should be used instead in most cases.
+ * True datasource libraries like hikari or vibur-dbcp should be used instead.
  * @author Sejal Patel
  */
 @Suppress("unused")
