@@ -1,13 +1,12 @@
 package io.tekniq.config
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import java.io.FileNotFoundException
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.fail
 
-object TqPropertiesConfigSpek : Spek({
+object TqPropertiesConfigSpec : DescribeSpec({
     describe("generic testing") {
         it("works with file loading") {
             val config = try {

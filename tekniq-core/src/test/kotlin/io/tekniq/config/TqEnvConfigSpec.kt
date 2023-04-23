@@ -1,11 +1,10 @@
 package io.tekniq.config
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-object TqEnvConfigSpek : Spek({
+object TqEnvConfigSpec : DescribeSpec({
     val subject = TqEnvConfig()
 
     describe("natural behavior") {

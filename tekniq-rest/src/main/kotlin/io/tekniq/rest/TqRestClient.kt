@@ -4,15 +4,16 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.fasterxml.jackson.module.kotlin.SingletonSupport
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
+import java.time.Duration
 import java.util.*
-import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
 import kotlin.reflect.KClass
@@ -35,23 +36,29 @@ open class TqRestClient(
         .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
     val allowSelfSigned: Boolean = false,
-    val ignoreHostnameVerifier: Boolean = false
+    @Deprecated("Define system property `-Djdk.internal.httpclient.disableHostnameVerification` instead")
+    val ignoreHostnameVerifier: Boolean = false // ignored as it is a global alteration not isolated to this connection
 ) {
-    private val ctx = SSLContext.getInstance("SSL").apply {
-        init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
+    private val ctx = SSLContext.getInstance("SSL").also {
+        it.init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
     }
 
-    open fun delete(url: String, headers: Map<String, Any> = emptyMap()): TqResponse =
-        request("DELETE", url, headers = headers)
+    open fun delete(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30): TqResponse =
+        request("DELETE", url, headers = headers, timeoutInSec = timeoutInSec)
 
-    open fun get(url: String, headers: Map<String, Any> = emptyMap()): TqResponse =
-        request("GET", url, headers = headers)
+    open fun get(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30): TqResponse =
+        request("GET", url, headers = headers, timeoutInSec = timeoutInSec)
 
-    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse =
-        request("PUT", url, json, headers)
+    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30): TqResponse =
+        request("PUT", url, json, headers, timeoutInSec = timeoutInSec)
 
-    open fun post(url: String, json: Any?, headers: Map<String, Any> = emptyMap()): TqResponse =
-        request("POST", url, json, headers)
+    open fun post(
+        url: String,
+        json: Any?,
+        headers: Map<String, Any> = emptyMap(),
+        timeoutInSec: Long = 30
+    ): TqResponse =
+        request("POST", url, json, headers, timeoutInSec = timeoutInSec)
 
     open fun <T : Any?> delete(url: String, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
         val response = delete(url, headers)
@@ -83,7 +90,7 @@ open class TqRestClient(
         return action(response)
     }
 
-    open fun transform(json: Any?) = when (json) {
+    open fun transform(json: Any?): String = when (json) {
         is String, is Number, is Boolean -> json.toString()
         else -> mapper.writeValueAsString(json)
     }
@@ -92,51 +99,56 @@ open class TqRestClient(
         method: String,
         url: String,
         json: Any? = null,
-        headers: Map<String, Any> = emptyMap()
+        headers: Map<String, Any> = emptyMap(),
+        timeoutInSec: Long,
     ): TqResponse {
         val payload: String = transform(json)
-        var response: TqResponse? = null
-        val duration = measureTimeMillis {
-            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                if (this is HttpsURLConnection) {
-                    if (allowSelfSigned) {
-                        sslSocketFactory = ctx.socketFactory
+        val response: TqResponse
+        measureTimeMillis {
+            val client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .let { if (allowSelfSigned) it.sslContext(ctx) else it }
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build()
+            val request = HttpRequest.newBuilder(URI(url))
+                .timeout(Duration.ofSeconds(timeoutInSec))
+                .let {
+                    var builder = it
+                    headers.forEach { (k, v) -> builder = builder.header(k, v.toString()) }
+                    builder
+                }
+                .let {
+                    when (method) {
+                        "GET" -> it.GET()
+                        "PUT" -> it.PUT(BodyPublishers.ofString(transform(json)))
+                        "POST" -> it.POST(BodyPublishers.ofString(transform(json)))
+                        "DELETE" -> it.DELETE()
+                        else -> it
                     }
-                    if (ignoreHostnameVerifier) {
-                        hostnameVerifier = HostnameVerifier { _, _ -> true }
-                    }
                 }
-                requestMethod = method
-                setRequestProperty("Content-Type", "application/json")
-                headers.forEach {
-                    setRequestProperty(it.key, it.value.toString())
-                }
-                if (json != null) {
-                    setRequestProperty("Content-Length", payload.length.toString())
-                    doOutput = true
-                    outputStream.write(payload.toByteArray())
-                }
-            }
+                .build()
 
             response = try {
-                val responseCode = conn.responseCode
-                val stream = conn.errorStream ?: conn.inputStream
-                TqResponse(responseCode, stream.bufferedReader().use { it.readText() }, conn.headerFields, mapper)
+                val resp = client.send(request, HttpResponse.BodyHandlers.ofString())
+                TqResponse(resp.statusCode(), resp.body(), resp.headers().map(), mapper)
             } catch (e: IOException) {
-                TqResponse(-1, e.message ?: "", conn.headerFields, mapper)
+                TqResponse(-1, e.message ?: "", request.headers().map(), mapper)
+            } catch (e: InterruptedException) {
+                TqResponse(-1, e.message ?: "", request.headers().map(), mapper)
             }
-        }
-        logHandler.onRestLog(
-            RestLog(
-                method,
-                url,
-                duration = duration,
-                request = payload,
-                status = response!!.status,
-                response = response!!.body
+        }.also {
+            logHandler.onRestLog(
+                RestLog(
+                    method,
+                    url,
+                    duration = it,
+                    request = payload,
+                    status = response.status,
+                    response = response.body
+                )
             )
-        )
-        return response ?: TqResponse(-1, "", emptyMap(), mapper)
+        }
+        return response
     }
 
     private object SelfSignedTrustManager : X509TrustManager {
@@ -185,7 +197,7 @@ data class RestLog(
     val response: String? = null
 )
 
-interface RestLogHandler {
+fun interface RestLogHandler {
     fun onRestLog(log: RestLog)
 }
 

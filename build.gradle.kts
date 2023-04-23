@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.8.0" apply false
+    kotlin("jvm") version "1.8.20" apply false
     id("net.researchgate.release") version "2.8.1"
     `java-library`
     signing
@@ -66,8 +66,9 @@ allprojects {
         implementation(kotlin("reflect"))
 
         testImplementation(kotlin("test"))
-        testImplementation("org.spekframework.spek2", "spek-dsl-jvm", prop("spek_version"))
-        testImplementation("org.spekframework.spek2", "spek-runner-junit5", prop("spek_version"))
+        testImplementation("io.kotest:kotest-runner-junit5:${properties["kotest_version"]}")
+        testImplementation("io.kotest:kotest-assertions-core:${properties["kotest_version"]}")
+        testImplementation("io.kotest:kotest-property:${properties["kotest_version"]}")
         testImplementation("ch.qos.logback", "logback-classic", prop("logback_version"))
     }
 
@@ -76,8 +77,8 @@ allprojects {
         withType<KotlinCompile> {
             kotlinOptions {
                 jvmTarget = JavaVersion.VERSION_11.majorVersion
-                apiVersion = "1.7"
-                languageVersion = "1.7"
+                apiVersion = "1.8"
+                languageVersion = "1.8"
                 javaParameters = true
                 suppressWarnings = true
                 freeCompilerArgs = listOf("-Xallow-result-return-type")
@@ -89,9 +90,7 @@ allprojects {
         }
 
         withType<Test> {
-            useJUnitPlatform {
-                includeEngines = setOf("spek2")
-            }
+            useJUnitPlatform()
         }
     }
 

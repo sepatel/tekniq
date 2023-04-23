@@ -1,0 +1,44 @@
+package io.tekniq.rest
+
+import io.kotest.core.spec.style.DescribeSpec
+import kotlin.test.assertEquals
+
+object TqRestClientSpec : DescribeSpec({
+    describe("Basic functionality") {
+        it("GET on postman echo") {
+            val url = "https://postman-echo.com/get"
+            val rest = TqRestClient()
+            val resp = rest.get(url)
+            assertEquals(200, resp.status)
+            val echo = resp.jsonAs<PostmanEcho>()
+            assertEquals(url, echo.url)
+        }
+
+        it("POST on postman echo") {
+            val url = "https://postman-echo.com/post"
+            val rest = TqRestClient()
+            val resp = rest.post(url, mapOf("a" to "apple", "c" to "candy"))
+//            println(resp)
+            assertEquals(200, resp.status)
+            val echo = resp.jsonAs<PostmanEcho>()
+//            println(echo)
+            assertEquals(url, echo.url)
+            assertEquals("apple", echo.json["a"])
+        }
+
+        it("Should timeout a request") {
+            val url = "https://httpstat.us/200?sleep=2000" // 2 second delay with status 200 on success
+            val rest = TqRestClient()
+            val resp = rest.get(url, timeoutInSec = 1)
+            println(resp)
+            assertEquals(-1, resp.status)
+        }
+    }
+}) {
+    data class PostmanEcho(
+        val args: Map<String, Any> = emptyMap(),
+        val headers: Map<String, Any> = emptyMap(),
+        val url: String,
+        val json: Map<String, Any> = emptyMap(),
+    )
+}

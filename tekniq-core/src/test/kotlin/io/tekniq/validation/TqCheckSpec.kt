@@ -1,7 +1,6 @@
 package io.tekniq.validation
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import java.net.URL
 import java.util.*
 import kotlin.test.assertEquals
@@ -23,7 +22,7 @@ data class PojoCheckBean(
 
 data class FakeInfo(val fake: String, val listing: List<ListItem>, val mappings: Map<String, Any>)
 
-object TqCheckSpek : Spek({
+object TqCheckSpek : DescribeSpec({
     val bean = PojoCheckBean(
         "42", "Bob", 140.6f, Date(), true, null,
         list = listOf(ListItem(1, "One"), ListItem(2, "Two")),
@@ -34,9 +33,12 @@ object TqCheckSpek : Spek({
     describe("Basic Checking Logic") {
         data class Fake(val named: String)
 
-        val pojoBased by memoized { TqCheck(bean) }
-        val mapBased by memoized {
-            TqCheck(
+        lateinit var pojoBased: TqCheck
+        lateinit var mapBased: TqCheck
+
+        beforeTest {
+            pojoBased = TqCheck(bean)
+            mapBased = TqCheck(
                 mapOf(
                     "id" to "42",
                     "name" to "Bob",
@@ -107,10 +109,10 @@ object TqCheckSpek : Spek({
     }
 
     describe("AND logic conditions") {
-        val check by memoized {
-            TqCheck(
-                bean
-            )
+        lateinit var check: TqCheck
+
+        beforeTest {
+            check = TqCheck(bean)
         }
 
         it("works with all conditions passing") {
@@ -151,10 +153,10 @@ object TqCheckSpek : Spek({
     }
 
     describe("OR logic conditions") {
-        val check by memoized {
-            TqCheck(
-                bean
-            )
+        lateinit var check: TqCheck
+
+        beforeTest {
+            check = TqCheck(bean)
         }
 
         it("works with all conditions passing") {

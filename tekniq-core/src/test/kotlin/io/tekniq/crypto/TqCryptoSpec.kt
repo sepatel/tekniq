@@ -1,14 +1,13 @@
 package io.tekniq.crypto
 
+import io.kotest.core.spec.style.DescribeSpec
 import io.tekniq.crypto.TqCryptography.decrypt
 import io.tekniq.crypto.TqCryptography.encrypt
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import kotlin.test.assertEquals
 
-object TqCryptoSpek : Spek({
+object TqCryptoSpec : DescribeSpec({
     describe("Encryption and Decryption") {
-        val keypair by memoized { TqCryptography.generateKeyPair() }
+        val keypair = TqCryptography.generateKeyPair()
         it("Encrypt a message") {
             val encrypted = keypair.encrypt("Hello Flying Purple Monkey!")
             val decrypted = keypair.decrypt(encrypted)

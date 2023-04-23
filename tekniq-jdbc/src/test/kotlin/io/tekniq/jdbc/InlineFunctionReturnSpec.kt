@@ -1,10 +1,9 @@
 package io.tekniq.jdbc
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import kotlin.test.assertEquals
 
-object InlineFunctionReturnSpek : Spek({
+object InlineFunctionReturnSpec : DescribeSpec({
     val conn = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
         val stmt = createStatement()
         stmt.execute("DROP TABLE dataone IF EXISTS")

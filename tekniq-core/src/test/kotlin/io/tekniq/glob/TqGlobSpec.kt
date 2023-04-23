@@ -1,26 +1,28 @@
 package io.tekniq.glob
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 private enum class TestMatchingType { insensitive, globstar, contains, extended }
-object TqGlobSpek : Spek({
+object TqGlobSpec : DescribeSpec({
     fun test(pattern: String, match: String, type: TestMatchingType, defaultResult: Boolean, flaggedResult: Boolean) {
         val result = when (type) {
             TestMatchingType.insensitive -> Pair(
                 TqGlob.toRegEx(pattern).matches(match),
                 TqGlob.toRegEx(pattern, insensitive = true).matches(match),
             )
+
             TestMatchingType.globstar -> Pair(
                 TqGlob.toRegEx(pattern).matches(match),
                 TqGlob.toRegEx(pattern, globstar = false).matches(match),
             )
+
             TestMatchingType.contains -> Pair(
                 TqGlob.toRegEx(pattern).matches(match),
                 TqGlob.toRegEx(pattern, contains = true).matches(match),
             )
+
             TestMatchingType.extended -> Pair(
                 TqGlob.toRegEx(pattern).matches(match),
                 TqGlob.toRegEx(pattern, extended = false).matches(match),

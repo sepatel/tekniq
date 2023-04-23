@@ -1,11 +1,10 @@
 package io.tekniq.schedule
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import java.util.*
 import kotlin.test.assertEquals
 
-object TqCronSpek : Spek({
+object TqCronSpec : DescribeSpec({
     val base = Calendar.getInstance().apply {
         set(Calendar.YEAR, 2017)
         set(Calendar.MONTH, Calendar.APRIL)

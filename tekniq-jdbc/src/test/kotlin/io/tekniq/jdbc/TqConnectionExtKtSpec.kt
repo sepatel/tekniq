@@ -1,7 +1,6 @@
 package io.tekniq.jdbc
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import java.sql.ResultSet
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -10,7 +9,7 @@ import kotlin.test.*
 
 data class FooRow(val id: Int, val name: String)
 
-object TqConnectionExtKtSpek : Spek({
+object TqConnectionExtKtSpek : DescribeSpec({
     val subject = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
         val stmt = createStatement()
         stmt.execute("DROP TABLE spektest IF EXISTS ")

@@ -1,15 +1,19 @@
 package io.tekniq.cache
 
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import kotlin.concurrent.thread
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-object TqCaffeineSpek : Spek({
-    val cache by memoized { TqLoadingCache(recordStats = true, loader = String::toInt) }
+object TqCaffeineSpec : DescribeSpec({
+    lateinit var cache: TqLoadingCache<String, Int>
+
+    beforeEach {
+        cache = TqLoadingCache(recordStats = true, loader = String::toInt)
+    }
+
     fun validateStatistics(cache: TqLoadingCache<*, *>, hits: Long, misses: Long) {
         val stats = cache.stats
         assertEquals(hits, stats.hitCount)
