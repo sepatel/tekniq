@@ -9,7 +9,7 @@ import kotlin.test.*
 
 data class FooRow(val id: Int, val name: String)
 
-object TqConnectionExtKtSpek : DescribeSpec({
+object TqConnectionExtKtSpec : DescribeSpec({
     val subject = TqSingleConnectionDataSource("jdbc:hsqldb:mem:tekniq", "sa", "").connection.apply {
         val stmt = createStatement()
         stmt.execute("DROP TABLE spektest IF EXISTS ")

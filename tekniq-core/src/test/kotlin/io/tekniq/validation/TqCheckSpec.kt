@@ -22,7 +22,7 @@ data class PojoCheckBean(
 
 data class FakeInfo(val fake: String, val listing: List<ListItem>, val mappings: Map<String, Any>)
 
-object TqCheckSpek : DescribeSpec({
+object TqCheckSpec : DescribeSpec({
     val bean = PojoCheckBean(
         "42", "Bob", 140.6f, Date(), true, null,
         list = listOf(ListItem(1, "One"), ListItem(2, "Two")),
