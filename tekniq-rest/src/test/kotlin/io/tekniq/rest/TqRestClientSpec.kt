@@ -30,10 +30,22 @@ object TqRestClientSpec : DescribeSpec({
             val url = "https://httpstat.us/200?sleep=2000" // 2 second delay with status 200 on success
             val rest = TqRestClient()
             val resp = rest.get(url, timeoutInSec = 1)
-            println(resp)
             assertEquals(-1, resp.status)
         }
     }
+//
+//    describe("Streaming functionality") {
+//        it("Should stream data back as well") {
+//            data class SimpleData(val name: String, val meta: Map<String, Any>)
+//            val url = "https://localhost:2223/api/test"
+//            val rest = TqRestClient(allowSelfSigned = true)
+//            val resp = rest.post(url, "true")
+//            assertEquals(200, resp.status)
+//            resp.jsonArrayOf<SimpleData>().forEach {
+//                println(it)
+//            }
+//        }
+//    }
 }) {
     data class PostmanEcho(
         val args: Map<String, Any> = emptyMap(),

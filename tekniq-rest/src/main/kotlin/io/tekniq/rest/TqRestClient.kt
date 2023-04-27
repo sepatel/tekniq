@@ -1,10 +1,12 @@
 package io.tekniq.rest
 
+import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.IOException
+import java.io.InputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -13,7 +15,6 @@ import java.net.http.HttpResponse
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.Duration
-import java.util.*
 import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
 import kotlin.reflect.KClass
@@ -21,7 +22,6 @@ import kotlin.system.measureTimeMillis
 
 @Suppress("unused")
 open class TqRestClient(
-    val logHandler: RestLogHandler = NoOpRestLogHandler,
     val mapper: ObjectMapper = ObjectMapper().registerModule(
         KotlinModule.Builder()
             .withReflectionCacheSize(512)
@@ -129,24 +129,13 @@ open class TqRestClient(
                 .build()
 
             response = try {
-                val resp = client.send(request, HttpResponse.BodyHandlers.ofString())
+                val resp = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
                 TqResponse(resp.statusCode(), resp.body(), resp.headers().map(), mapper)
             } catch (e: IOException) {
-                TqResponse(-1, e.message ?: "", request.headers().map(), mapper)
+                TqResponse(-1, (e.message ?: "").byteInputStream(), request.headers().map(), mapper)
             } catch (e: InterruptedException) {
-                TqResponse(-1, e.message ?: "", request.headers().map(), mapper)
+                TqResponse(-1, (e.message ?: "").byteInputStream(), request.headers().map(), mapper)
             }
-        }.also {
-            logHandler.onRestLog(
-                RestLog(
-                    method,
-                    url,
-                    duration = it,
-                    request = payload,
-                    status = response.status,
-                    response = response.body
-                )
-            )
         }
         return response
     }
@@ -160,7 +149,7 @@ open class TqRestClient(
 
 data class TqResponse(
     val status: Int,
-    val body: String,
+    val body: InputStream,
     private val headers: Map<String, Any>,
     private val mapper: ObjectMapper
 ) {
@@ -184,25 +173,25 @@ data class TqResponse(
 
     inline fun <reified T : Any> jsonAs(): T = jsonAsNullable(T::class)!!
     inline fun <reified T : Any> jsonAsNullable(): T? = jsonAsNullable(T::class)
-    fun <T : Any> jsonAsNullable(type: KClass<T>): T? = mapper.readValue(body, type.java)
-}
+    fun <T : Any> jsonAsNullable(type: KClass<T>): T? = mapper.readValue(body.readAllBytes(), type.java)
 
-data class RestLog(
-    val method: String,
-    val url: String,
-    val ts: Date = Date(),
-    val duration: Long = 0,
-    val request: String? = null,
-    val status: Int = 0,
-    val response: String? = null
-)
+    inline fun <reified T : Any> jsonArrayOf(): Iterator<T> = jsonArrayOf(T::class)
+    fun <T : Any> jsonArrayOf(type: KClass<T>): Iterator<T> {
+        val parser = mapper.factory.createParser(body)
+        if (parser.nextToken() != JsonToken.START_ARRAY) error("Invalid start of array")
+        val it = object : Iterator<T> {
+            var checked: Boolean? = null
+            override fun hasNext(): Boolean {
+                val next = checked
+                if (next != null) return next
+                return (parser.nextToken() != JsonToken.END_ARRAY).also { checked = it }
+            }
 
-fun interface RestLogHandler {
-    fun onRestLog(log: RestLog)
-}
-
-private object NoOpRestLogHandler : RestLogHandler {
-    override fun onRestLog(log: RestLog) {
+            override fun next(): T {
+                if (hasNext()) return mapper.readValue(parser, type.java).also { checked = null }
+                throw NoSuchElementException()
+            }
+        }
+        return it
     }
 }
-
