@@ -149,10 +149,12 @@ open class TqRestClient(
 
 data class TqResponse(
     val status: Int,
-    val body: InputStream,
+    val stream: InputStream,
     private val headers: Map<String, Any>,
     private val mapper: ObjectMapper
 ) {
+    val body: String by lazy { String(stream.readAllBytes()) }
+
     fun header(key: String): Any? {
         val value = headers[key] ?: return null
         if (value is Collection<*> && value.size == 1) {
@@ -173,11 +175,11 @@ data class TqResponse(
 
     inline fun <reified T : Any> jsonAs(): T = jsonAsNullable(T::class)!!
     inline fun <reified T : Any> jsonAsNullable(): T? = jsonAsNullable(T::class)
-    fun <T : Any> jsonAsNullable(type: KClass<T>): T? = mapper.readValue(body.readAllBytes(), type.java)
+    fun <T : Any> jsonAsNullable(type: KClass<T>): T? = mapper.readValue(body, type.java)
 
     inline fun <reified T : Any> jsonArrayOf(): Iterator<T> = jsonArrayOf(T::class)
     fun <T : Any> jsonArrayOf(type: KClass<T>): Iterator<T> {
-        val parser = mapper.factory.createParser(body)
+        val parser = mapper.factory.createParser(stream)
         if (parser.nextToken() != JsonToken.START_ARRAY) error("Invalid start of array")
         val it = object : Iterator<T> {
             var checked: Boolean? = null
