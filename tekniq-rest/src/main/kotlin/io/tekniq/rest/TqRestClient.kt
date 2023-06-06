@@ -37,8 +37,15 @@ open class TqRestClient(
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
     val allowSelfSigned: Boolean = false,
     @Deprecated("Define system property `-Djdk.internal.httpclient.disableHostnameVerification` instead")
-    val ignoreHostnameVerifier: Boolean = false // ignored as it is a global alteration not isolated to this connection
+    val ignoreHostnameVerifier: Boolean = false, // ignored as it is a global alteration not isolated to this connection
+    connectTimeout: Duration = Duration.ofSeconds(10),
 ) {
+    private val client = HttpClient.newBuilder()
+        .connectTimeout(connectTimeout)
+        .let { if (allowSelfSigned) it.sslContext(ctx) else it }
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build()
+
     private val ctx = SSLContext.getInstance("SSL").also {
         it.init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
     }
@@ -105,11 +112,7 @@ open class TqRestClient(
         val payload: String = transform(json)
         val response: TqResponse
         measureTimeMillis {
-            val client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .let { if (allowSelfSigned) it.sslContext(ctx) else it }
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build()
+
             val request = HttpRequest.newBuilder(URI(url))
                 .timeout(Duration.ofSeconds(timeoutInSec))
                 .let {

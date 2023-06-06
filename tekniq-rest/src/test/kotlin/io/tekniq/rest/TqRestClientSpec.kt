@@ -1,9 +1,25 @@
 package io.tekniq.rest
 
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.ints.shouldBeExactly
+import io.kotest.matchers.ints.shouldBeLessThan
 import kotlin.test.assertEquals
 
 object TqRestClientSpec : DescribeSpec({
+    describe("Excessive Thread Count") {
+        val url = "https://postman-echo.com/get"
+
+        it("Shall not increase in thread counts") {
+            val rest = TqRestClient()
+            rest.get( url) { body } // warmup
+            val active = Thread.activeCount()
+
+            repeat(5) {
+                rest.get( url) { body }
+                Thread.activeCount() shouldBeExactly active
+            }
+        }
+    }
     describe("Basic functionality") {
         it("GET on postman echo") {
             val url = "https://postman-echo.com/get"
