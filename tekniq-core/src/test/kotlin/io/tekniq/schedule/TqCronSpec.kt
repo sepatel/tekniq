@@ -1,19 +1,21 @@
 package io.tekniq.schedule
 
 import io.kotest.core.spec.style.DescribeSpec
+import io.tekniq.noTime
+import io.tekniq.toDate
 import java.util.*
 import kotlin.test.assertEquals
 
 object TqCronSpec : DescribeSpec({
-    val base = Calendar.getInstance().apply {
+    val base = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
         set(Calendar.YEAR, 2017)
-        set(Calendar.MONTH, Calendar.APRIL)
+        set(Calendar.MONTH, Calendar.JULY)
         set(Calendar.DAY_OF_MONTH, 1)
         set(Calendar.HOUR_OF_DAY, 0)
         set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0)
         set(Calendar.MILLISECOND, 0)
-    }.time
+    }.time.noTime().toDate()
 
     describe("basic pattern") {
         it("triggers every 10th second") {
@@ -39,8 +41,8 @@ object TqCronSpec : DescribeSpec({
             var now = base
 
             IntRange(1, 8).forEach {
-                now = cron.next(now)
-                assertEquals(60000L * 60 * 12 + ((it - 1) * 60000L * 60 * 24), now.time - base.time)
+                now = cron.next(now).noTime().toDate()
+                assertEquals(it * 1000 * 60 * 60 * 24L, now.time - base.time)
             }
         }
     }
