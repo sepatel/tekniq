@@ -3,6 +3,7 @@ package io.tekniq
 import java.time.*
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -54,5 +55,22 @@ class InitProperty<V>(private val default: (property: KProperty<*>) -> V) : Read
     override fun setValue(thisRef: Any, property: KProperty<*>, value: V) {
         if (this.value != EMPTY) error("${property.name} already initialized")
         this.value = value
+    }
+}
+
+inline fun <reified V> lazyChild(parent: String, noinline initializer: () -> V): ReadOnlyProperty<Any, V> =
+    LazyChildProperty(parent, initializer)
+
+class LazyChildProperty<V>(private val parent: String, private val initializer: () -> V) : ReadOnlyProperty<Any, V> {
+    private val value: V by lazy { initializer() }
+
+    override fun getValue(thisRef: Any, property: KProperty<*>): V {
+        // 1st stack item is calling this lazy child function
+        // 2nd stack item is the variable being protected
+        // 3rd stack item is the caller to be audited
+        val throwable = Throwable("Property cannot be accessed outside of $parent")
+        if (throwable.stackTrace[2].className.startsWith(parent)) return value
+        throwable.printStackTrace()
+        throw throwable
     }
 }
