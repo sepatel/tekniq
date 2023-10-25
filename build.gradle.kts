@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.8.21" apply false
+    kotlin("jvm") version "1.9.10" apply false
     id("net.researchgate.release") version "2.8.1"
     `java-library`
     signing
@@ -69,6 +69,7 @@ allprojects {
         testImplementation("io.kotest:kotest-runner-junit5:${properties["kotest_version"]}")
         testImplementation("io.kotest:kotest-assertions-core:${properties["kotest_version"]}")
         testImplementation("io.kotest:kotest-property:${properties["kotest_version"]}")
+        testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
         testImplementation("ch.qos.logback", "logback-classic", prop("logback_version"))
     }
 
@@ -77,8 +78,8 @@ allprojects {
         withType<KotlinCompile> {
             kotlinOptions {
                 jvmTarget = JavaVersion.VERSION_11.majorVersion
-                apiVersion = "1.8"
-                languageVersion = "1.8"
+                apiVersion = "1.9"
+                languageVersion = "1.9"
                 javaParameters = true
                 suppressWarnings = true
                 freeCompilerArgs = listOf("-Xallow-result-return-type")

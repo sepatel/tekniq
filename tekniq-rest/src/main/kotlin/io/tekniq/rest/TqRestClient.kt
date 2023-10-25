@@ -1,37 +1,35 @@
 package io.tekniq.rest
 
-import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.IOException
-import java.io.InputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
+import java.net.http.WebSocket
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.Duration
 import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
-import kotlin.reflect.KClass
-import kotlin.system.measureTimeMillis
 
 @Suppress("unused")
 open class TqRestClient(
-    val mapper: ObjectMapper = ObjectMapper().registerModule(
-        KotlinModule.Builder()
-            .withReflectionCacheSize(512)
-            .configure(KotlinFeature.NullToEmptyCollection, false)
-            .configure(KotlinFeature.NullToEmptyMap, false)
-            .configure(KotlinFeature.NullIsSameAsDefault, false)
-            .configure(KotlinFeature.SingletonSupport, false)
-            .configure(KotlinFeature.StrictNullChecks, false)
-            .build()
-    )
+    val mapper: ObjectMapper = ObjectMapper()
+        .registerModule(
+            KotlinModule.Builder()
+                .withReflectionCacheSize(512)
+                .configure(KotlinFeature.NullToEmptyCollection, false)
+                .configure(KotlinFeature.NullToEmptyMap, false)
+                .configure(KotlinFeature.NullIsSameAsDefault, false)
+                .configure(KotlinFeature.SingletonSupport, false)
+                .configure(KotlinFeature.StrictNullChecks, false)
+                .build()
+        )
         .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
         .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
@@ -50,14 +48,40 @@ open class TqRestClient(
         it.init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
     }
 
-    open fun delete(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30): TqResponse =
-        request("DELETE", url, headers = headers, timeoutInSec = timeoutInSec)
+    open fun openWebSocket(
+        url: String,
+        headers: Map<String, String> = emptyMap(),
+        connectTimeout: Duration = Duration.ofSeconds(10),
+        subprotocols: Array<String> = emptyArray(),
+        listener: (TqWsConfig) -> Unit,
+    ): WebSocket? {
+        val config = TqWebSocketListenerConfig()
+        listener(config)
 
-    open fun get(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30): TqResponse =
-        request("GET", url, headers = headers, timeoutInSec = timeoutInSec)
+        return client.newWebSocketBuilder()
+            .let {
+                var ref = it
+                headers.forEach { (k, v) -> ref = ref.header(k, v) }
+                if (subprotocols.isNotEmpty()) ref =
+                    ref.subprotocols(subprotocols.first(), *subprotocols.drop(1).toTypedArray())
+                ref
+            }
+            .connectTimeout(connectTimeout)
+            .buildAsync(URI.create(url), config)
+            .join()
+    }
 
-    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30): TqResponse =
-        request("PUT", url, json, headers, timeoutInSec = timeoutInSec)
+    open fun delete(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30)
+        : TqResponse = request("DELETE", url, headers = headers, timeoutInSec = timeoutInSec)
+
+    open fun get(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30)
+        : TqResponse = request("GET", url, headers = headers, timeoutInSec = timeoutInSec)
+
+    open fun patch(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30)
+        : TqResponse = request("PATCH", url, json, headers, timeoutInSec = timeoutInSec)
+
+    open fun put(url: String, json: Any?, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30)
+        : TqResponse = request("PUT", url, json, headers, timeoutInSec = timeoutInSec)
 
     open fun post(
         url: String,
@@ -74,6 +98,16 @@ open class TqRestClient(
 
     open fun <T : Any?> get(url: String, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
         val response = get(url, headers)
+        return action(response)
+    }
+
+    open fun <T : Any?> patch(
+        url: String,
+        json: Any?,
+        headers: Map<String, Any> = emptyMap(),
+        action: TqResponse.() -> T
+    ): T? {
+        val response = patch(url, json, headers)
         return action(response)
     }
 
@@ -109,36 +143,31 @@ open class TqRestClient(
         headers: Map<String, Any> = emptyMap(),
         timeoutInSec: Long,
     ): TqResponse {
-        val payload: String = transform(json)
         val response: TqResponse
-        measureTimeMillis {
-
-            val request = HttpRequest.newBuilder(URI(url))
-                .timeout(Duration.ofSeconds(timeoutInSec))
-                .let {
-                    var builder = it
-                    headers.forEach { (k, v) -> builder = builder.header(k, v.toString()) }
-                    builder
-                }
-                .let {
-                    when (method) {
-                        "GET" -> it.GET()
-                        "PUT" -> it.PUT(BodyPublishers.ofString(transform(json)))
-                        "POST" -> it.POST(BodyPublishers.ofString(transform(json)))
-                        "DELETE" -> it.DELETE()
-                        else -> it
-                    }
-                }
-                .build()
-
-            response = try {
-                val resp = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-                TqResponse(resp.statusCode(), resp.body(), resp.headers().map(), mapper)
-            } catch (e: IOException) {
-                TqResponse(-1, (e.message ?: "").byteInputStream(), request.headers().map(), mapper)
-            } catch (e: InterruptedException) {
-                TqResponse(-1, (e.message ?: "").byteInputStream(), request.headers().map(), mapper)
+        val request = HttpRequest.newBuilder(URI(url))
+            .timeout(Duration.ofSeconds(timeoutInSec))
+            .let {
+                var builder = it
+                headers.forEach { (k, v) -> builder = builder.header(k, v.toString()) }
+                builder
             }
+            .let {
+                when (method) {
+                    "GET" -> it.GET()
+                    "PATCH", "PUT", "POST" -> it.method(method, BodyPublishers.ofString(transform(json)))
+                    "DELETE" -> it.DELETE()
+                    else -> it
+                }
+            }
+            .build()
+
+        response = try {
+            val resp = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
+            TqResponse(resp.statusCode(), resp.body(), resp.headers().map(), mapper)
+        } catch (e: IOException) {
+            TqResponse(-1, (e.message ?: "").byteInputStream(), request.headers().map(), mapper)
+        } catch (e: InterruptedException) {
+            TqResponse(-1, (e.message ?: "").byteInputStream(), request.headers().map(), mapper)
         }
         return response
     }
@@ -147,56 +176,5 @@ open class TqRestClient(
         override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) = Unit
         override fun getAcceptedIssuers(): Array<out X509Certificate> = emptyArray()
         override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) = Unit
-    }
-}
-
-data class TqResponse(
-    val status: Int,
-    val stream: InputStream,
-    private val headers: Map<String, Any>,
-    private val mapper: ObjectMapper
-) {
-    val body: String by lazy { String(stream.readAllBytes()) }
-
-    fun header(key: String): Any? {
-        val value = headers[key] ?: return null
-        if (value is Collection<*> && value.size == 1) {
-            return value.first()
-        }
-        return value
-    }
-
-    fun headers(): Map<String, Any> {
-        return headers.mapValues {
-            val value = it.value
-            if (value is Array<*> && value.size == 1) {
-                return@mapValues value[0]!!
-            }
-            it
-        }
-    }
-
-    inline fun <reified T : Any> jsonAs(): T = jsonAsNullable(T::class)!!
-    inline fun <reified T : Any> jsonAsNullable(): T? = jsonAsNullable(T::class)
-    fun <T : Any> jsonAsNullable(type: KClass<T>): T? = mapper.readValue(body, type.java)
-
-    inline fun <reified T : Any> jsonArrayOf(): Iterator<T> = jsonArrayOf(T::class)
-    fun <T : Any> jsonArrayOf(type: KClass<T>): Iterator<T> {
-        val parser = mapper.factory.createParser(stream)
-        if (parser.nextToken() != JsonToken.START_ARRAY) error("Invalid start of array")
-        val it = object : Iterator<T> {
-            var checked: Boolean? = null
-            override fun hasNext(): Boolean {
-                val next = checked
-                if (next != null) return next
-                return (parser.nextToken() != JsonToken.END_ARRAY).also { checked = it }
-            }
-
-            override fun next(): T {
-                if (hasNext()) return mapper.readValue(parser, type.java).also { checked = null }
-                throw NoSuchElementException()
-            }
-        }
-        return it
     }
 }
