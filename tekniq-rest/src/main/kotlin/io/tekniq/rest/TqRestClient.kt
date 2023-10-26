@@ -54,7 +54,7 @@ open class TqRestClient(
         connectTimeout: Duration = Duration.ofSeconds(10),
         subprotocols: Array<String> = emptyArray(),
         listener: (TqWsConfig) -> Unit,
-    ): WebSocket? {
+    ): WebSocket {
         val config = TqWebSocketListenerConfig()
         listener(config)
 
