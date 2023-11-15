@@ -19,26 +19,36 @@ import javax.net.ssl.X509TrustManager
 
 @Suppress("unused")
 open class TqRestClient(
-    val mapper: ObjectMapper = ObjectMapper()
-        .registerModule(
-            KotlinModule.Builder()
-                .withReflectionCacheSize(512)
-                .configure(KotlinFeature.NullToEmptyCollection, false)
-                .configure(KotlinFeature.NullToEmptyMap, false)
-                .configure(KotlinFeature.NullIsSameAsDefault, false)
-                .configure(KotlinFeature.SingletonSupport, false)
-                .configure(KotlinFeature.StrictNullChecks, false)
-                .build()
-        )
-        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-        .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES),
+    val mapper: ObjectMapper = defaultMapper,
     val allowSelfSigned: Boolean = false,
     @Deprecated("Define system property `-Djdk.internal.httpclient.disableHostnameVerification` instead")
     val ignoreHostnameVerifier: Boolean = false, // ignored as it is a global alteration not isolated to this connection
     connectTimeout: Duration = Duration.ofSeconds(10),
     version: HttpClient.Version? = null
 ) {
+    companion object {
+        private val defaultMapper : ObjectMapper = ObjectMapper()
+            .registerModule(
+                KotlinModule.Builder()
+                    .withReflectionCacheSize(512)
+                    .configure(KotlinFeature.NullToEmptyCollection, false)
+                    .configure(KotlinFeature.NullToEmptyMap, false)
+                    .configure(KotlinFeature.NullIsSameAsDefault, false)
+                    .configure(KotlinFeature.SingletonSupport, false)
+                    .configure(KotlinFeature.StrictNullChecks, false)
+                    .build()
+            )
+            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    }
+    constructor(
+        mapper: ObjectMapper = defaultMapper,
+        allowSelfSigned: Boolean = false,
+        ignoreHostnameVerifier: Boolean = false, // ignored as it is a global alteration not isolated to this connection
+        connectTimeout: Duration = Duration.ofSeconds(10),
+    ) : this(mapper, allowSelfSigned, ignoreHostnameVerifier, connectTimeout, null)
+
     private val client = HttpClient.newBuilder()
         .connectTimeout(connectTimeout)
         .let { if (allowSelfSigned) it.sslContext(ctx) else it }
