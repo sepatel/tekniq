@@ -37,10 +37,12 @@ open class TqRestClient(
     @Deprecated("Define system property `-Djdk.internal.httpclient.disableHostnameVerification` instead")
     val ignoreHostnameVerifier: Boolean = false, // ignored as it is a global alteration not isolated to this connection
     connectTimeout: Duration = Duration.ofSeconds(10),
+    version: HttpClient.Version? = null
 ) {
     private val client = HttpClient.newBuilder()
         .connectTimeout(connectTimeout)
         .let { if (allowSelfSigned) it.sslContext(ctx) else it }
+        .let { if (version != null) it.version(version) else it }
         .followRedirects(HttpClient.Redirect.NORMAL)
         .build()
 
