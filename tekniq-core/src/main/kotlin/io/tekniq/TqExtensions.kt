@@ -17,6 +17,11 @@ fun <S, T> Iterable<S>.iteratorAs(action: (src: S) -> T): Iterator<T> {
     }
 }
 
+operator fun Date.plus(milli: Long): Date = Date(time + milli)
+operator fun Date.plusAssign(milli: Long) { time += milli }
+operator fun Date.minus(milli: Long): Date = Date(time - milli)
+operator fun Date.minusAssign(milli: Long) { time -= milli }
+
 fun Date.add(duration: Duration): Date = add(duration.toMillis().toInt(), TimeUnit.MILLISECONDS)
 fun Date.add(amount: Int, unit: TimeUnit = TimeUnit.DAYS): Date = Calendar.getInstance()
     .also { it.timeInMillis = this.time }
