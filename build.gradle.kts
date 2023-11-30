@@ -176,6 +176,7 @@ project(":tekniq-rest") {
     dependencies {
         implementation("com.fasterxml.jackson.core", "jackson-core", prop("jackson_version"))
         implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", prop("jackson_version"))
+        testImplementation("io.javalin:javalin:${properties["javalin_version"]}")
+        testImplementation("ch.qos.logback:logback-classic:${properties["logback_version"]}")
     }
 }
-
