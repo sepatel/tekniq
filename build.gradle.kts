@@ -32,7 +32,7 @@ release {
     revertOnFail = true
 
     git {
-        requireBranch = "master"
+        requireBranch = "main"
         pushToRemote = "origin"
     }
 }
@@ -123,7 +123,7 @@ allprojects {
                     licenses {
                         license {
                             name.set("MIT License")
-                            url.set("https://raw.githubusercontent.com/sepatel/tekniq/master/LICENSE")
+                            url.set("https://raw.githubusercontent.com/sepatel/tekniq/main/LICENSE")
                         }
                     }
 
