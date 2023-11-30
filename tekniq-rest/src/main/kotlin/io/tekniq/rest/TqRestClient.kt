@@ -14,8 +14,10 @@ import java.net.http.WebSocket
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
+import kotlin.reflect.KClass
 
 @Suppress("unused")
 open class TqRestClient(
@@ -27,7 +29,7 @@ open class TqRestClient(
     version: HttpClient.Version? = null
 ) {
     companion object {
-        private val defaultMapper : ObjectMapper = ObjectMapper()
+        private val defaultMapper: ObjectMapper = ObjectMapper()
             .registerModule(
                 KotlinModule.Builder()
                     .withReflectionCacheSize(512)
@@ -42,6 +44,7 @@ open class TqRestClient(
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     }
+
     constructor(
         mapper: ObjectMapper = defaultMapper,
         allowSelfSigned: Boolean = false,
@@ -182,6 +185,41 @@ open class TqRestClient(
             TqResponse(-1, (e.message ?: "").byteInputStream(), request.headers().map(), mapper)
         }
         return response
+    }
+
+    inline fun <reified T : Any> sseListener(
+        url: String,
+        headers: Map<String, Any> = emptyMap(),
+        connectTimeout: Duration = Duration.ofSeconds(10),
+        noinline listener: (TqSseConfig<T>) -> Unit,
+    ) = sseListener(url, T::class, headers, connectTimeout, listener)
+
+    fun <T : Any> sseListener(
+        url: String,
+        clazz: KClass<T>,
+        headers: Map<String, Any> = emptyMap(),
+        connectTimeout: Duration = Duration.ofSeconds(10),
+        listener: TqSseConfig<T>.() -> Unit,
+    ): CompletableFuture<Int> {
+        val request = HttpRequest.newBuilder(URI(url))
+            .timeout(connectTimeout)
+            .let {
+                var builder = it
+                headers.forEach { (k, v) -> builder = builder.header(k, v.toString()) }
+                builder
+            }
+            .header("Accept", "text/event-stream")
+            .build()
+
+        val subscriber = TqSseConfigListener(clazz, mapper)
+        listener(subscriber)
+
+        return client.sendAsync(request, HttpResponse.BodyHandlers.fromLineSubscriber(subscriber))
+            .thenApply { it.statusCode() }
+            .exceptionally {
+                it.printStackTrace()
+                -1
+            }
     }
 
     private object SelfSignedTrustManager : X509TrustManager {
