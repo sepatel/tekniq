@@ -7,7 +7,8 @@ import java.security.spec.RSAPrivateKeySpec
 import java.security.spec.RSAPublicKeySpec
 import java.util.*
 import javax.crypto.Cipher
-
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 object TqCryptography {
     enum class Encoding { Base64, Hex }
@@ -76,6 +77,17 @@ object TqCryptography {
     fun md5(text: String, encoding: Encoding = Encoding.Hex): String =
         String(digest(text.toByteArray(), "MD5", encoding))
 
+    fun hmac(msg: String, key: String, algo: String = "HmacSHA256"): String =
+        hmac(msg.toByteArray(), key.toByteArray(), algo)
+
+    fun hmac(msg: ByteArray, key: ByteArray, algo: String = "HmacSHA256"): String {
+        val mac = Mac.getInstance(algo)
+            .also { it.init(SecretKeySpec(key, algo)) }
+        val formatter = Formatter()
+        return mac.doFinal(msg)
+            .onEach { formatter.format("%02x", it) }
+            .let { formatter.toString() }
+    }
 
     private fun digest(text: ByteArray, algo: String, encoding: Encoding = Encoding.Hex): ByteArray {
         try {
