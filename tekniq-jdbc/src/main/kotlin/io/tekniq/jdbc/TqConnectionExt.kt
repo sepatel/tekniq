@@ -9,6 +9,13 @@ import java.sql.Statement
 import javax.sql.rowset.CachedRowSet
 import javax.sql.rowset.RowSetProvider
 
+inline fun <T> Connection.stream(sql: String, vararg params: Any?, noinline action: (rs: ResultSet) -> T): Sequence<T> =
+    prepareStatement(sql).let {
+        it.applyParams(*params)
+        it.closeOnCompletion()
+        ResultSetIterator(it.executeQuery(), action).asSequence()
+    }
+
 inline fun Connection.select(sql: String, vararg params: Any?): CachedRowSet = prepareStatement(sql)
     .use { stmt ->
         stmt.applyParams(*params)
