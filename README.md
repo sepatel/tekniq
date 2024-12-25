@@ -19,7 +19,7 @@ implementation "io.tekniq:tekniq-core:0.+"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-core</artifactId>
-    <version>0.19.6</version>
+    <version>0.20.0</version>
 </dependency>
 ```
 
@@ -40,7 +40,7 @@ implementation "io.tekniq:tekniq-cache:0.+"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-cache</artifactId>
-    <version>0.19.6</version>
+    <version>0.20.0</version>
 </dependency>
 ```
 
@@ -61,7 +61,7 @@ implementation "io.tekniq:tekniq-jdbc:0.+"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-jdbc</artifactId>
-    <version>0.19.6</version>
+    <version>0.20.0</version>
 </dependency>
 ```
 
@@ -81,6 +81,6 @@ implementation "io.tekniq:tekniq-rest:0.+"
 <dependency>
     <groupId>io.tekniq</groupId>
     <artifactId>tekniq-rest</artifactId>
-    <version>0.19.6</version>
+    <version>0.20.0</version>
 </dependency>
 ```
