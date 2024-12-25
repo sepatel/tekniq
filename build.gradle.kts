@@ -1,6 +1,6 @@
-import net.researchgate.release.GitAdapter
-import net.researchgate.release.ReleaseExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 fun prop(key: String) = properties[key]?.toString()
 
@@ -11,8 +11,8 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.9.22" apply false
-    id("net.researchgate.release") version "2.8.1"
+    kotlin("jvm") version "2.1.0" apply false
+    id("net.researchgate.release") version "3.1.0"
     `java-library`
     signing
     `maven-publish`
@@ -20,9 +20,6 @@ plugins {
 
 defaultTasks("clean", "build")
 
-fun ReleaseExtension.git(configureFn: GitAdapter.GitConfig.() -> Unit) {
-    (propertyMissing("git") as GitAdapter.GitConfig).configureFn()
-}
 release {
     failOnCommitNeeded = true
     failOnPublishNeeded = false
@@ -45,6 +42,11 @@ tasks {
     "afterReleaseBuild" {
         dependsOn("publish")
         modules.forEach { dependsOn(":$it:publish") }
+    }
+
+    withType<Wrapper> {
+        gradleVersion = "8.12"
+        distributionType = Wrapper.DistributionType.BIN
     }
 }
 
@@ -76,13 +78,12 @@ allprojects {
 
     tasks {
         withType<KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = JavaVersion.VERSION_11.majorVersion
-                apiVersion = "1.9"
-                languageVersion = "1.9"
+            compilerOptions {
+                jvmTarget = JvmTarget.JVM_21
+                apiVersion = KotlinVersion.KOTLIN_2_1
+                languageVersion = KotlinVersion.KOTLIN_2_1
                 javaParameters = true
                 suppressWarnings = true
-                freeCompilerArgs = listOf("-Xallow-result-return-type")
             }
         }
 
@@ -97,7 +98,7 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(JavaVersion.VERSION_11.majorVersion))
+            languageVersion.set(JavaLanguageVersion.of(21))
         }
         withJavadocJar()
         withSourcesJar()
@@ -176,7 +177,7 @@ project(":tekniq-rest") {
     dependencies {
         implementation("com.fasterxml.jackson.core", "jackson-core", prop("jackson_version"))
         implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", prop("jackson_version"))
-        testImplementation("io.javalin:javalin:${properties["javalin_version"]}")
+        testImplementation("io.javalin:javalin:6.4.0")
         testImplementation("ch.qos.logback:logback-classic:${properties["logback_version"]}")
     }
 }

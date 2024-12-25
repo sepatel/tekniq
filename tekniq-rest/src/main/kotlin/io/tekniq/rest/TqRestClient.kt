@@ -23,8 +23,6 @@ import kotlin.reflect.KClass
 open class TqRestClient(
     val mapper: ObjectMapper = defaultMapper,
     val allowSelfSigned: Boolean = false,
-    @Deprecated("Define system property `-Djdk.internal.httpclient.disableHostnameVerification` instead")
-    val ignoreHostnameVerifier: Boolean = false, // ignored as it is a global alteration not isolated to this connection
     connectTimeout: Duration = Duration.ofSeconds(10),
     version: HttpClient.Version? = null
 ) {
@@ -45,12 +43,9 @@ open class TqRestClient(
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     }
 
-    constructor(
-        mapper: ObjectMapper = defaultMapper,
-        allowSelfSigned: Boolean = false,
-        ignoreHostnameVerifier: Boolean = false, // ignored as it is a global alteration not isolated to this connection
-        connectTimeout: Duration = Duration.ofSeconds(10),
-    ) : this(mapper, allowSelfSigned, ignoreHostnameVerifier, connectTimeout, null)
+    private val ctx = SSLContext.getInstance("SSL").also {
+        it.init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
+    }
 
     private val client = HttpClient.newBuilder()
         .connectTimeout(connectTimeout)
@@ -58,10 +53,6 @@ open class TqRestClient(
         .let { if (version != null) it.version(version) else it }
         .followRedirects(HttpClient.Redirect.NORMAL)
         .build()
-
-    private val ctx = SSLContext.getInstance("SSL").also {
-        it.init(null, arrayOf(SelfSignedTrustManager), SecureRandom())
-    }
 
     open fun openWebSocket(
         url: String,

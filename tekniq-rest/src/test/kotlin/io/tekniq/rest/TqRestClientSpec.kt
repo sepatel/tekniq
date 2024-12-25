@@ -1,8 +1,6 @@
 package io.tekniq.rest
 
 import io.javalin.Javalin
-import io.javalin.apibuilder.ApiBuilder.get
-import io.javalin.apibuilder.ApiBuilder.post
 import io.javalin.http.HttpStatus
 import io.javalin.http.bodyAsClass
 import io.javalin.http.sse.SseClient
@@ -115,16 +113,15 @@ object TqRestClientSpec : DescribeSpec({
     private val javalin = Javalin
         .create {
             it.jsonMapper(JavalinJackson(rest.mapper))
-            it.plugins.enableCors { cors -> cors.add { it.anyHost() } }
+            it.bundledPlugins.enableCors { cors -> cors.addRule { it.anyHost() } }
         }
-        .routes {
-            get("/get") { it.json(PostmanEcho(it.queryParamMap(), it.headerMap(), it.url())) }
-            post("/post") { it.json(PostmanEcho(it.queryParamMap(), it.headerMap(), it.url(), it.bodyAsClass())) }
-            get("/timeout") {
+        .get("/get") { it.json(PostmanEcho(it.queryParamMap(), it.headerMap(), it.url())) }
+        .post("/post") { it.json(PostmanEcho(it.queryParamMap(), it.headerMap(), it.url(), it.bodyAsClass())) }
+        .get("/timeout") {
                 Thread.sleep(2.seconds.inWholeMilliseconds)
                 it.status(HttpStatus.NO_CONTENT)
             }
-            post("/stream") {
+        .post("/stream") {
                 val list = listOf("One", "Two", "Three", "Four")
                 val iterator = object : Iterator<SimpleData> {
                     private var i = list.iterator()
@@ -137,7 +134,6 @@ object TqRestClientSpec : DescribeSpec({
                 }
                 it.jsonStream(iterator)
             }
-        }
         .sse("/sse/string") { client ->
             clients += MessageClient(
                 client, """
