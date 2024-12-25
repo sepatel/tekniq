@@ -26,10 +26,7 @@ open class TqCheck(
             var value = src
             field.split('.').forEach { key ->
                 if (value is Map<*, *>) {
-                    value.javaClass.getMethod("get", Any::class.java).let {
-                        it.isAccessible = true
-                        value = it.invoke(value, key) ?: return null
-                    }
+                    value = value[key] ?: return null
                 } else {
                     try {
                         val capitalized = key.replaceFirstChar {

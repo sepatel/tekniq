@@ -1,5 +1,4 @@
-@file:SuppressWarnings("TooManyFunctions")
-
+@file:Suppress("TooManyFunctions")
 package io.tekniq.jdbc
 
 import java.sql.ResultSet

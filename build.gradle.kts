@@ -80,11 +80,10 @@ allprojects {
         withType<KotlinCompile> {
             compilerOptions {
                 jvmTarget = JvmTarget.JVM_21
-                apiVersion = KotlinVersion.KOTLIN_2_0
-                languageVersion = KotlinVersion.KOTLIN_2_0
+                apiVersion = KotlinVersion.KOTLIN_2_1
+                languageVersion = KotlinVersion.KOTLIN_2_1
                 javaParameters = true
                 suppressWarnings = true
-                freeCompilerArgs = listOf("-Xallow-result-return-type")
             }
         }
 
