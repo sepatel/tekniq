@@ -97,13 +97,13 @@ open class TqRestClient(
     ): TqResponse =
         request("POST", url, json, headers, timeoutInSec = timeoutInSec)
 
-    open fun <T : Any?> delete(url: String, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
-        val response = delete(url, headers)
+    open fun <T : Any?> delete(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30, action: TqResponse.() -> T): T? {
+        val response = delete(url, headers, timeoutInSec)
         return action(response)
     }
 
-    open fun <T : Any?> get(url: String, headers: Map<String, Any> = emptyMap(), action: TqResponse.() -> T): T? {
-        val response = get(url, headers)
+    open fun <T : Any?> get(url: String, headers: Map<String, Any> = emptyMap(), timeoutInSec: Long = 30, action: TqResponse.() -> T): T? {
+        val response = get(url, headers, timeoutInSec)
         return action(response)
     }
 
@@ -111,9 +111,10 @@ open class TqRestClient(
         url: String,
         json: Any?,
         headers: Map<String, Any> = emptyMap(),
+        timeoutInSec: Long = 30,
         action: TqResponse.() -> T
     ): T? {
-        val response = patch(url, json, headers)
+        val response = patch(url, json, headers, timeoutInSec)
         return action(response)
     }
 
@@ -121,9 +122,10 @@ open class TqRestClient(
         url: String,
         json: Any?,
         headers: Map<String, Any> = emptyMap(),
+        timeoutInSec: Long = 30,
         action: TqResponse.() -> T
     ): T? {
-        val response = put(url, json, headers)
+        val response = put(url, json, headers, timeoutInSec)
         return action(response)
     }
 
@@ -131,9 +133,10 @@ open class TqRestClient(
         url: String,
         json: Any?,
         headers: Map<String, Any> = emptyMap(),
+        timeoutInSec: Long = 30,
         action: TqResponse.() -> T
     ): T? {
-        val response = post(url, json, headers)
+        val response = post(url, json, headers, timeoutInSec)
         return action(response)
     }
 
