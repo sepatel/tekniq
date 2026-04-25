@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.collections.MutableMap.MutableEntry
 
-open class TqLoadingCache<K, V>(
+open class TqLoadingCache<K : Any, V : Any>(
     val expireAfterAccess: Long? = null,
     val expireAfterWrite: Long? = null,
     val refreshAfterWrite: Long? = null,
@@ -13,16 +13,16 @@ open class TqLoadingCache<K, V>(
     val recordStats: Boolean = false,
     private val loader: (key: K) -> V?
 ) : TqCacheMap<K, V> {
-    private val cacheLoader: LoadingCache<K, V> = Caffeine
-        .newBuilder()
-        .also { builder ->
+    private val cacheLoader: LoadingCache<K, V> = NullSafeCacheBuilder.build(
+        Caffeine.newBuilder().also { builder ->
             expireAfterAccess?.also { builder.expireAfterAccess(expireAfterAccess, MILLISECONDS) }
             expireAfterWrite?.also { builder.expireAfterWrite(expireAfterWrite, MILLISECONDS) }
             maximumSize?.also { builder.maximumSize(maximumSize) }
             refreshAfterWrite?.also { builder.refreshAfterWrite(refreshAfterWrite, MILLISECONDS) }
             if (recordStats) builder.recordStats()
-        }
-        .build { key -> loader(key) }
+        },
+        loader
+    )
     private val map = cacheLoader.asMap()
     override val entries: MutableSet<MutableEntry<K, V>>
         get() = map.entries
