@@ -71,7 +71,7 @@ object TqCaffeineSpec : DescribeSpec({
 
     describe("ensures feature flags are functional") {
         it("don't cache null answers") {
-            val cache = TqLoadingCache<Int, String?>(recordStats = true) {
+            val cache = TqLoadingCache<Int, String>(recordStats = true) {
                 when (it % 2 == 0) {
                     true -> it.toString()
                     else -> null

@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "2.1.0" apply false
+    kotlin("jvm") version "2.3.21" apply false
     id("net.researchgate.release") version "3.1.0"
     `java-library`
     signing
@@ -45,7 +45,7 @@ tasks {
     }
 
     withType<Wrapper> {
-        gradleVersion = "8.12"
+        gradleVersion = "9.4.1"
         distributionType = Wrapper.DistributionType.BIN
     }
 }
@@ -71,7 +71,7 @@ allprojects {
         testImplementation("io.kotest:kotest-runner-junit5:${properties["kotest_version"]}")
         testImplementation("io.kotest:kotest-assertions-core:${properties["kotest_version"]}")
         testImplementation("io.kotest:kotest-property:${properties["kotest_version"]}")
-        testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+        testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
         testImplementation("ch.qos.logback", "logback-classic", prop("logback_version"))
     }
 
@@ -80,8 +80,8 @@ allprojects {
         withType<KotlinCompile> {
             compilerOptions {
                 jvmTarget = JvmTarget.JVM_21
-                apiVersion = KotlinVersion.KOTLIN_2_1
-                languageVersion = KotlinVersion.KOTLIN_2_1
+                apiVersion = KotlinVersion.KOTLIN_2_3
+                languageVersion = KotlinVersion.KOTLIN_2_3
                 javaParameters = true
                 suppressWarnings = true
             }
@@ -170,14 +170,14 @@ project(":tekniq-cache") {
 project(":tekniq-jdbc") {
     dependencies {
         implementation(project(":tekniq-core"))
-        testImplementation("org.hsqldb:hsqldb:2.3.4")
+        testImplementation("org.hsqldb:hsqldb:2.7.4")
     }
 }
 project(":tekniq-rest") {
     dependencies {
         implementation("com.fasterxml.jackson.core", "jackson-core", prop("jackson_version"))
         implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", prop("jackson_version"))
-        testImplementation("io.javalin:javalin:6.4.0")
+        testImplementation("io.javalin:javalin:7.2.0")
         testImplementation("ch.qos.logback:logback-classic:${properties["logback_version"]}")
     }
 }

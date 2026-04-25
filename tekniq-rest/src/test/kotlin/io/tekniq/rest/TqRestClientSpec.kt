@@ -111,17 +111,16 @@ object TqRestClientSpec : DescribeSpec({
     private val clients = ConcurrentHashMap.newKeySet<MessageClient<*>>()
     private val rest = TqRestClient()
     private val javalin = Javalin
-        .create {
-            it.jsonMapper(JavalinJackson(rest.mapper))
-            it.bundledPlugins.enableCors { cors -> cors.addRule { it.anyHost() } }
-        }
-        .get("/get") { it.json(PostmanEcho(it.queryParamMap(), it.headerMap(), it.url())) }
-        .post("/post") { it.json(PostmanEcho(it.queryParamMap(), it.headerMap(), it.url(), it.bodyAsClass())) }
-        .get("/timeout") {
+        .create { config ->
+            config.jsonMapper(JavalinJackson(rest.mapper))
+            config.bundledPlugins.enableCors { cors -> cors.addRule { rule -> rule.anyHost() } }
+            config.routes.get("/get") { ctx -> ctx.json(PostmanEcho(ctx.queryParamMap(), ctx.headerMap(), ctx.url())) }
+            config.routes.post("/post") { ctx -> ctx.json(PostmanEcho(ctx.queryParamMap(), ctx.headerMap(), ctx.url(), ctx.bodyAsClass())) }
+            config.routes.get("/timeout") { ctx ->
                 Thread.sleep(2.seconds.inWholeMilliseconds)
-                it.status(HttpStatus.NO_CONTENT)
+                ctx.status(HttpStatus.NO_CONTENT)
             }
-        .post("/stream") {
+            config.routes.post("/stream") { ctx ->
                 val list = listOf("One", "Two", "Three", "Four")
                 val iterator = object : Iterator<SimpleData> {
                     private var i = list.iterator()
@@ -132,46 +131,47 @@ object TqRestClientSpec : DescribeSpec({
                         return SimpleData(i.next(), mapOf("Random" to Random.nextDouble()))
                     }
                 }
-                it.jsonStream(iterator)
+                ctx.jsonStream(iterator)
             }
-        .sse("/sse/string") { client ->
-            clients += MessageClient(
-                client, """
-                This is a super long message with a substructure
-                id: fake-random-id
-                event: fake-event
-                data: fake simple message
-                
-                Now what to do about it all?
-            """.trimIndent()
-            )
-            client.onClose { clients.removeIf { it.sse == client } }
-            thread {
-                Thread.sleep(1000)
-                client.close()
+            config.routes.sse("/sse/string") { client ->
+                clients += MessageClient(
+                    client, """
+                    This is a super long message with a substructure
+                    id: fake-random-id
+                    event: fake-event
+                    data: fake simple message
+
+                    Now what to do about it all?
+                """.trimIndent()
+                )
+                client.onClose { clients.removeIf { mc -> mc.sse == client } }
+                thread {
+                    Thread.sleep(1000)
+                    client.close()
+                }
+                client.keepAlive()
             }
-            client.keepAlive()
-        }
-        .sse("/sse/object") { client ->
-            clients += MessageClient(client, SimpleData("Blob", mapOf("iq" to 142)))
-            client.onClose { clients.removeIf { it.sse == client } }
-            thread {
-                Thread.sleep(1000)
-                client.close()
+            config.routes.sse("/sse/object") { client ->
+                clients += MessageClient(client, SimpleData("Blob", mapOf("iq" to 142)))
+                client.onClose { clients.removeIf { mc -> mc.sse == client } }
+                thread {
+                    Thread.sleep(1000)
+                    client.close()
+                }
+                client.keepAlive()
             }
-            client.keepAlive()
-        }
-        .ws("/ws") { config ->
-            config.onConnect {
-                it.send(SimpleData("Guardians", mapOf("Location" to "Galaxy")).toString())
+            config.routes.ws("/ws") { ws ->
+                ws.onConnect { ctx ->
+                    ctx.send(SimpleData("Guardians", mapOf("Location" to "Galaxy")).toString())
+                }
+                ws.onMessage { ctx ->
+                    println("[Server Message] ${ctx.message()}")
+                    ctx.send(SimpleData(ctx.message(), ctx.queryParamMap()).toString())
+                    ctx.closeSession(1002, "I'm a happy camper")
+                }
+                ws.onError { ctx -> ctx.error()?.printStackTrace() }
+                ws.onClose { ctx -> println("Closed because of ${ctx.status()} - ${ctx.reason()}") }
             }
-            config.onMessage {
-                println("[Server Message] ${it.message()}")
-                it.send(SimpleData(it.message(), it.queryParamMap()).toString())
-                it.closeSession(1002, "I'm a happy camper")
-            }
-            config.onError { it.error()?.printStackTrace() }
-            config.onClose { println("Closed because of ${it.status()} - ${it.reason()}") }
         }
 
     init {

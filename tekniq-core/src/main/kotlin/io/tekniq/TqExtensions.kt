@@ -22,18 +22,19 @@ operator fun Date.plusAssign(milli: Long) { time += milli }
 operator fun Date.minus(milli: Long): Date = Date(time - milli)
 operator fun Date.minusAssign(milli: Long) { time -= milli }
 
-fun Date.add(duration: Duration): Date = add(duration.toMillis().toInt(), TimeUnit.MILLISECONDS)
-fun Date.add(amount: Int, unit: TimeUnit = TimeUnit.DAYS): Date = Calendar.getInstance()
+fun Date.add(duration: Duration): Date = add(duration.toMillis(), TimeUnit.MILLISECONDS)
+fun Date.add(amount: Int, unit: TimeUnit = TimeUnit.DAYS): Date = add(amount.toLong(), unit)
+fun Date.add(amount: Long, unit: TimeUnit = TimeUnit.DAYS): Date = Calendar.getInstance()
     .also { it.timeInMillis = this.time }
     .also {
         when (unit) {
             TimeUnit.NANOSECONDS -> throw UnsupportedOperationException("Nanoseconds are not supported by Date")
             TimeUnit.MICROSECONDS -> throw UnsupportedOperationException("Nanoseconds are not supported by Date")
-            TimeUnit.MILLISECONDS -> it.add(Calendar.MILLISECOND, amount)
-            TimeUnit.SECONDS -> it.add(Calendar.SECOND, amount)
-            TimeUnit.MINUTES -> it.add(Calendar.MINUTE, amount)
-            TimeUnit.HOURS -> it.add(Calendar.HOUR_OF_DAY, amount)
-            TimeUnit.DAYS -> it.add(Calendar.DAY_OF_MONTH, amount)
+            TimeUnit.MILLISECONDS -> it.add(Calendar.MILLISECOND, amount.toInt())
+            TimeUnit.SECONDS -> it.add(Calendar.SECOND, amount.toInt())
+            TimeUnit.MINUTES -> it.add(Calendar.MINUTE, amount.toInt())
+            TimeUnit.HOURS -> it.add(Calendar.HOUR_OF_DAY, amount.toInt())
+            TimeUnit.DAYS -> it.add(Calendar.DAY_OF_MONTH, amount.toInt())
         }
     }
     .time
