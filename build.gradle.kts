@@ -13,9 +13,9 @@ buildscript {
 plugins {
     kotlin("jvm") version "2.3.21" apply false
     id("net.researchgate.release") version "3.1.0"
-    `java-library`
-    signing
-    `maven-publish`
+    id("java-library")
+    id("maven-publish")
+    id("signing")
 }
 
 defaultTasks("clean", "build")
@@ -138,17 +138,17 @@ allprojects {
                 }
             }
         }
-        repositories {
+	repositories {
             maven {
-                name = "sonatype"
+                name = "ossrh-staging-api"
                 if (version.toString().endsWith("-SNAPSHOT")) {
-                    setUrl("https://oss.sonatype.org/content/repositories/snapshots/")
+                    setUrl("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/")
                 } else {
-                    setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+                    setUrl("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
                 }
-                credentials {
-                    username = project.findProperty("ossrhUsername").toString()
-                    password = project.findProperty("ossrhPassword").toString()
+		credentials {
+                    username = project.findProperty("ossrhUsername") as String? ?: error("Missing ossrhUsername")
+                    password = project.findProperty("ossrhPassword") as String? ?: error("Missing ossrhPassword")
                 }
             }
         }
