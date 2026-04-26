@@ -13,6 +13,7 @@ buildscript {
 plugins {
     kotlin("jvm") version "2.3.21" apply false
     id("net.researchgate.release") version "3.1.0"
+    id("org.jreleaser") version "1.15.0"
     id("java-library")
     id("maven-publish")
     id("signing")
@@ -34,14 +35,49 @@ release {
     }
 }
 
+jreleaser {
+    signing {
+        active.set(org.jreleaser.model.Active.NEVER)
+    }
+
+    project {
+        description.set("Kotlin idiomatic framework for improved JVM/Application development")
+        copyright.set("Sejal Patel")
+    }
+
+    release {
+        generic {
+            enabled.set(true)
+            skipRelease.set(true)
+        }
+    }
+
+    deploy {
+        maven {
+            mavenCentral {
+                create("sonatype") {
+                    active.set(org.jreleaser.model.Active.ALWAYS)
+                    url.set("https://central.sonatype.com/api/v1/publisher")
+                    sign.set(false)
+                    stagingRepository("build/staging-deploy")
+                }
+            }
+        }
+    }
+}
+
 tasks {
     val modules = listOf("tekniq-core", "tekniq-cache", "tekniq-jdbc", "tekniq-rest")
     "beforeReleaseBuild" {
         modules.forEach { dependsOn(":$it:test") }
     }
-    "afterReleaseBuild" {
-        dependsOn("publish")
+
+    named("jreleaserDeploy") {
         modules.forEach { dependsOn(":$it:publish") }
+    }
+
+    "afterReleaseBuild" {
+        dependsOn("jreleaserDeploy")
     }
 
     withType<Wrapper> {
@@ -138,18 +174,10 @@ allprojects {
                 }
             }
         }
-	repositories {
+        repositories {
             maven {
-                name = "ossrh-staging-api"
-                if (version.toString().endsWith("-SNAPSHOT")) {
-                    setUrl("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/")
-                } else {
-                    setUrl("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
-                }
-		credentials {
-                    username = project.findProperty("ossrhUsername") as String? ?: error("Missing ossrhUsername")
-                    password = project.findProperty("ossrhPassword") as String? ?: error("Missing ossrhPassword")
-                }
+                name = "staging"
+                url = uri(rootProject.layout.buildDirectory.dir("staging-deploy"))
             }
         }
     }
