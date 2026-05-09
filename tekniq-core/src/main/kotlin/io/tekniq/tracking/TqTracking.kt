@@ -3,38 +3,22 @@ package io.tekniq.tracking
 import java.util.*
 
 enum class TqTrackingType {
-    Airborne, AustraliaPost, CanadaPost, DHL, FedEx, TNT, UPS, USPS
+    FedEx, UPS, USPS
 }
 
 object TqTracking {
     fun getTrackingType(trackingNumber: String): TqTrackingType? {
-        if (isFedExExpress(trackingNumber) || isFedExGround(trackingNumber)) {
-            return TqTrackingType.FedEx
-        } else if (isUps(trackingNumber)) {
-            return TqTrackingType.UPS
-            //} else if (isAirborne(trackingNumber)) {
-            //return TqTrackingType.Airborne
-        } else if (isUsps(trackingNumber)) {
-            return TqTrackingType.USPS
+        return when {
+            isFedExExpress(trackingNumber) || isFedExGround(trackingNumber) -> TqTrackingType.FedEx
+            isUps(trackingNumber) -> TqTrackingType.UPS
+            isUsps(trackingNumber) -> TqTrackingType.USPS
+            else -> null
         }
-        return null
     }
 
     private fun differenceFromNextHighestMultipleOf10(sum: Int): Int {
         return (sum / 10 * 10 + 10 - sum) % 10
     }
-
-    /**
-     *
-     * Airborne Express utilizes the stanard MOD 7 method for their tracking
-     * numbers.  The check digit is the last digit of the tracking number.
-
-     * [208-914-2901 x Val in Boise Call Center]
-     *
-     */
-    /* private fun isAirborne(trackingNumber: String): Boolean {
-        return false
-    } */
 
     /**
      *

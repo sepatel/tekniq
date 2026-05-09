@@ -6,6 +6,7 @@ import java.util.*
 
 open class TqPropertiesConfig(private val propertiesFile: String, private val stopOnFailure: Boolean = true) :
     TqMapConfig(loadProperties(propertiesFile, stopOnFailure)) {
+
     companion object {
         @Suppress("UNCHECKED_CAST")
         private fun loadProperties(propertiesFile: String, stopOnFailure: Boolean) = Properties().apply {
@@ -29,5 +30,7 @@ open class TqPropertiesConfig(private val propertiesFile: String, private val st
         } as Map<String, Any>
     }
 
-    override fun reload() = reload(loadProperties(propertiesFile, stopOnFailure))
+    override fun reload() {
+        reload(loadProperties(propertiesFile, stopOnFailure))
+    }
 }

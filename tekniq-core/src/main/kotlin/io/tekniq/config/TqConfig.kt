@@ -71,9 +71,11 @@ abstract class TqConfig {
 
     abstract fun <T : Any?> getValue(key: String, type: Class<T>? = null): T?
 
-    open fun reload() = Unit
+    open fun reload() {
+        // Override in subclasses to implement custom reload logic
+    }
 
-    protected fun reload(newConfigs: Map<String, Any?>) {
+    open fun reload(newConfigs: Map<String, Any?>) {
         val existing = HashSet(configs.keys)
         newConfigs.entries.forEach {
             val oldValue = configs[it.key]

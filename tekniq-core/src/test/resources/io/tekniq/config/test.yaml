@@ -1,0 +1,8 @@
+name: TestApp
+version: "2.0.0"
+debug: false
+port: 9090
+features:
+  auth: false
+  logging: true
+  cache: true

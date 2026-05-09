@@ -258,5 +258,107 @@ object TqCheckSpec : DescribeSpec({
             assertEquals("InvalidURL website", reasons.first().code)
         }
     }
+
+    describe("notBlank validation") {
+        it("should fail with null value") {
+            val check = TqCheck(mapOf("field" to null as String?))
+            check.notBlank("field")
+            assertTrue(check.reasons.isNotEmpty())
+            assertEquals("Blank field", check.reasons.first().code)
+        }
+
+        it("should fail with empty string") {
+            val check = TqCheck(mapOf("field" to ""))
+            check.notBlank("field")
+            assertTrue(check.reasons.isNotEmpty())
+        }
+
+        it("should fail with whitespace-only string") {
+            val check = TqCheck(mapOf("field" to "   "))
+            check.notBlank("field")
+            assertTrue(check.reasons.isNotEmpty())
+        }
+
+        it("should pass with valid string") {
+            val check = TqCheck(mapOf("field" to "hello"))
+            check.notBlank("field")
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should pass with valid string containing spaces") {
+            val check = TqCheck(mapOf("field" to "hello world"))
+            check.notBlank("field")
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should handle ifDefined - skip when undefined") {
+            val check = TqCheck(mapOf("other" to "value"))
+            check.notBlank("field", ifDefined = true)
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should work on lists - pass when list is not empty") {
+            val check = TqCheck(mapOf("field" to listOf("a", "b")))
+            check.notBlank("field")
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should work on lists - fail when list is empty") {
+            val check = TqCheck(mapOf("field" to emptyList<String>()))
+            check.notBlank("field")
+            assertTrue(check.reasons.isNotEmpty())
+        }
+
+        it("should work on numbers - fail when null") {
+            val check = TqCheck(mapOf("field" to null as Int?))
+            check.notBlank("field")
+            assertTrue(check.reasons.isNotEmpty())
+        }
+
+        it("should work on numbers - pass when value is zero") {
+            val check = TqCheck(mapOf("field" to 0))
+            check.notBlank("field")
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should pass when field is present") {
+            val check = TqCheck(mapOf("field" to "value"))
+            check.notBlank("field")
+            assertTrue(check.reasons.isEmpty())
+        }
+    }
+
+    describe("custom constraint") {
+        it("should allow custom validation predicate") {
+            val check = TqCheck(mapOf("value" to 42))
+            check.custom("Even", field = "value") { ((it as? Int) ?: 0) % 2 == 0 }
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should fail custom validation when predicate returns false") {
+            val check = TqCheck(mapOf("value" to -5))
+            check.custom("Positive", field = "value") { ((it as? Int) ?: 0) > 0 }
+            assertTrue(check.reasons.isNotEmpty())
+            assertEquals("Invalid+Positive value", check.reasons.first().code)
+        }
+
+        it("should work with custom name") {
+            val check = TqCheck(mapOf("name" to "Bob"))
+            check.custom("Capitalized", field = "name") { (it as? String)?.first()?.isUpperCase() == true }
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should respect ifDefined parameter") {
+            val check = TqCheck(mapOf("other" to "value"))
+            check.custom("Required", field = "field", ifDefined = true) { it != null }
+            assertTrue(check.reasons.isEmpty())
+        }
+
+        it("should handle non-string types") {
+            val check = TqCheck(mapOf("field" to 123))
+            check.custom("NonZero", field = "field") { (it as? Int) != 0 }
+            assertTrue(check.reasons.isEmpty())
+        }
+    }
 })
 

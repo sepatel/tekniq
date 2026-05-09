@@ -67,7 +67,7 @@ jreleaser {
 }
 
 tasks {
-    val modules = listOf("tekniq-core", "tekniq-cache", "tekniq-jdbc", "tekniq-rest")
+    val modules = listOf("tekniq-core", "tekniq-cache", "tekniq-jdbc", "tekniq-rest", "tekniq-config")
     "beforeReleaseBuild" {
         modules.forEach { dependsOn(":$it:test") }
     }
@@ -207,5 +207,13 @@ project(":tekniq-rest") {
         implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", prop("jackson_version"))
         testImplementation("io.javalin:javalin:7.2.0")
         testImplementation("ch.qos.logback:logback-classic:${properties["logback_version"]}")
+    }
+}
+project(":tekniq-config") {
+    dependencies {
+        implementation(project(":tekniq-core"))
+        implementation("com.fasterxml.jackson.core", "jackson-core", prop("jackson_version"))
+        implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", prop("jackson_version"))
+        implementation("org.yaml", "snakeyaml", prop("snakeyaml_version"))
     }
 }

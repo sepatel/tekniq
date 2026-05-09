@@ -1,3 +1,3 @@
 rootProject.name = "tekniq-project"
-include("tekniq-core", "tekniq-cache", "tekniq-jdbc", "tekniq-rest")
+include("tekniq-core", "tekniq-cache", "tekniq-jdbc", "tekniq-rest", "tekniq-config")
 

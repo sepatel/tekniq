@@ -219,7 +219,18 @@ open class TqCheck(
 
     fun notBlank(field: String? = null, message: String? = null, ifDefined: Boolean = false): TqCheck =
         test("Blank", field, message, ifDefined) {
-            return@test (it == null || it.toString().trim().isEmpty())
+            if (it == null) return@test false
+            if (it is Collection<*>) return@test it.isNotEmpty()
+            if (it !is String) return@test it.toString().trim().isNotEmpty()
+            return@test it.trim().isNotEmpty()
+        }
+
+    fun custom(name: String, field: KProperty<*>? = null, message: String? = null, ifDefined: Boolean = false, predicate: (Any?) -> Boolean): TqCheck =
+        custom(name, field?.name, message, ifDefined, predicate)
+
+    fun custom(name: String, field: String? = null, message: String? = null, ifDefined: Boolean = false, predicate: (Any?) -> Boolean): TqCheck =
+        test("Invalid+$name", field, message, ifDefined) {
+            predicate(it)
         }
 
     fun number(field: KProperty<*>, message: String? = null, ifDefined: Boolean = false) =
