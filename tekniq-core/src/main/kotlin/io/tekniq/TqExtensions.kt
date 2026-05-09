@@ -22,22 +22,25 @@ operator fun Date.plusAssign(milli: Long) { time += milli }
 operator fun Date.minus(milli: Long): Date = Date(time - milli)
 operator fun Date.minusAssign(milli: Long) { time -= milli }
 
-fun Date.add(duration: Duration): Date = add(duration.toMillis(), TimeUnit.MILLISECONDS)
+fun Date.add(duration: Duration): Date = Date(time + duration.toMillis())
 fun Date.add(amount: Int, unit: TimeUnit = TimeUnit.DAYS): Date = add(amount.toLong(), unit)
-fun Date.add(amount: Long, unit: TimeUnit = TimeUnit.DAYS): Date = Calendar.getInstance()
-    .also { it.timeInMillis = this.time }
-    .also {
-        when (unit) {
-            TimeUnit.NANOSECONDS -> throw UnsupportedOperationException("Nanoseconds are not supported by Date")
-            TimeUnit.MICROSECONDS -> throw UnsupportedOperationException("Nanoseconds are not supported by Date")
-            TimeUnit.MILLISECONDS -> it.add(Calendar.MILLISECOND, amount.toInt())
-            TimeUnit.SECONDS -> it.add(Calendar.SECOND, amount.toInt())
-            TimeUnit.MINUTES -> it.add(Calendar.MINUTE, amount.toInt())
-            TimeUnit.HOURS -> it.add(Calendar.HOUR_OF_DAY, amount.toInt())
-            TimeUnit.DAYS -> it.add(Calendar.DAY_OF_MONTH, amount.toInt())
+fun Date.add(amount: Long, unit: TimeUnit = TimeUnit.DAYS): Date = when (unit) {
+    TimeUnit.NANOSECONDS -> throw UnsupportedOperationException("Nanoseconds are not supported by Date")
+    TimeUnit.MICROSECONDS -> throw UnsupportedOperationException("Microseconds are not supported by Date")
+    TimeUnit.MILLISECONDS -> Date(time + amount)
+    else -> Calendar.getInstance()
+        .also { it.timeInMillis = this.time }
+        .also {
+            when (unit) {
+                TimeUnit.SECONDS -> it.add(Calendar.SECOND, amount.toInt())
+                TimeUnit.MINUTES -> it.add(Calendar.MINUTE, amount.toInt())
+                TimeUnit.HOURS -> it.add(Calendar.HOUR_OF_DAY, amount.toInt())
+                TimeUnit.DAYS -> it.add(Calendar.DAY_OF_MONTH, amount.toInt())
+                else -> throw IllegalArgumentException("Unknown TimeUnit: $unit")
+            }
         }
-    }
-    .time
+        .time
+}
 
 fun Date.noTime(zoneId: ZoneId = ZoneId.of("UTC")) =
     toInstant().atZone(zoneId).toLocalDate().atStartOfDay()
