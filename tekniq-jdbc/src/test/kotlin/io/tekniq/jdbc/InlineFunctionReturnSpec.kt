@@ -19,20 +19,17 @@ object InlineFunctionReturnSpec : DescribeSpec({
         stmt.close()
     }
 
-    describe("failure within nested selects") {
-        it("breaks correct within the nesting") {
+    describe("iteration over nested selects") {
+        it("can use labeled return to break out of nested iteration") {
             var answer = "wrong"
-            conn.select("SELECT * from (VALUES(0))") outerLoop@{
-                conn.select("SELECT id, s FROM dataone") {
-                    val s = it.getString("s")
-                    conn.select("SELECT color FROM dataoption WHERE dataone_id=?", it.getInt("id")) {
-                        if (it.getString("color") == "Transparent") {
-                            answer = s
-                            return@outerLoop
-                        }
-                        answer = "reallyWrong"
+            outerLoop@ for (row in conn.select("SELECT * from (VALUES(0))") { getInt(1) }) {
+                for (dataRow in conn.select("SELECT id, s FROM dataone") { Pair(getInt("id"), getString("s")) }) {
+                    val color = conn.select("SELECT color FROM dataoption WHERE dataone_id=?", dataRow.first) { getString("color") }.firstOrNull()
+                    if (color == "Transparent") {
+                        answer = dataRow.second
+                        break@outerLoop
                     }
-                    answer = "awesomeWrong"
+                    answer = "reallyWrong"
                 }
                 answer = "howSoWrong"
             }

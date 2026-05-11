@@ -29,78 +29,69 @@ object TqConnectionExtKtSpec : DescribeSpec({
             val localTime = LocalTime.ofSecondOfDay(7777)
             val localDateTime = LocalDateTime.of(localDate, localTime)
             subject.insert("INSERT INTO issue01 VALUES(1, ?, ?, ?)", localDate, localTime, localDateTime)
-            run {
-                val result = subject.selectOne("SELECT * FROM issue01 WHERE id=1") { rs ->
-                    Triple(rs.getDate("date"), rs.getTime("time"), rs.getTimestamp("ts"))
-                } ?: fail("Expected row back")
-                assertEquals(localDate, result.first.toLocalDate())
-                assertEquals(localTime, result.second.toLocalTime())
-                assertEquals(localDateTime, result.third.toLocalDateTime())
-            }
+            val result = subject.selectFirst("SELECT * FROM issue01 WHERE id=1") {
+                Triple(getDate("date"), getTime("time"), getTimestamp("ts"))
+            } ?: fail("Expected row back")
+            assertEquals(localDate, result.first.toLocalDate())
+            assertEquals(localTime, result.second.toLocalTime())
+            assertEquals(localDateTime, result.third.toLocalDateTime())
         }
     }
 
     describe("basic connection validation") {
         it("using an open and valid db connection") {
-            val sql = "SELECT id, name FROM spektest WHERE id=?"
-            run {
-                // can read an existing record in a table
-                val result = subject.selectOne(sql, 1, action = mapper)!!
-                assertNotNull(result)
-                assertEquals(1, result.id)
-                assertEquals("Foo", result.name)
-            }
-
-            run {
-                //can add 1 row and read the written record
-                val rows = subject.insert("INSERT INTO spektest(id, name) VALUES(?, ?)", 42, "Meaning of Life")
-                assertEquals(1, rows)
-                assertEquals(2, subject.select("SELECT id, name FROM spektest", action = mapper).size)
-                val result = subject.selectOne(sql, 42, action = mapper)
-                assertNotNull(result)
-                assertEquals(42, result.id)
-                assertEquals("Meaning of Life", result.name)
-            }
-
-            run {
-                //can return null when selecting a non-existing record
-                val result = subject.selectOne(sql, 69, action = mapper)
-                assertNull(result)
-            }
-
-            run {
-                //can efficiently act upon multiple rows of data without mapping and memory overhead
-                val sql = "SELECT id, name FROM spektest"
-                val x = subject.select(sql) { rs ->
-                    // returns a Unit not a FooRow
-                    FooRow(rs.getInt("id"), rs.getString("name"))
-                }
-                val y = subject.select<FooRow>(sql) {
-                    // returns a List<FooRow>
-                    FooRow(it.getInt("id"), it.getString("name"))
-                }
-                assertNotEquals<Any>(x, y)
-
-                val z = subject.select(sql) {
-                    // returns a Unit not a FooRow
-                    FooRow(it.getInt("id"), it.getString("name"))
-                }
-                assertEquals(x, z)
-                assertNotEquals<Any>(y, z)
-
-                val w = subject.select(sql, action = mapper) // mapper explicitly returns a FooRow
-                assertEquals(y, w)
-                assertNotEquals<Any>(x, w)
-            }
+            val result = subject.selectFirst("SELECT id, name FROM spektest WHERE id=?", 1, action = mapper)!!
+            assertNotNull(result)
+            assertEquals(1, result.id)
+            assertEquals("Foo", result.name)
         }
 
-        it("using cached row sets") {
+        it("can add 1 row and read the written record") {
+            val rows = subject.insert("INSERT INTO spektest(id, name) VALUES(?, ?)", 42, "Meaning of Life")
+            assertEquals(1, rows)
+            assertEquals(2, subject.select("SELECT id, name FROM spektest", action = mapper).toList().size)
+            val result = subject.selectFirst("SELECT id, name FROM spektest WHERE id=?", 42, action = mapper)
+            assertNotNull(result)
+            assertEquals(42, result.id)
+            assertEquals("Meaning of Life", result.name)
+        }
+
+        it("can return null when selecting a non-existing record") {
+            val result = subject.selectFirst("SELECT id, name FROM spektest WHERE id=?", 69, action = mapper)
+            assertNull(result)
+        }
+
+        it("can stream multiple rows") {
+            val results = subject.select("SELECT id, name FROM spektest", action = mapper).toList()
+            assertEquals(2, results.size)
+            assertEquals(1, results[0].id)
+            assertEquals("Foo", results[0].name)
+            assertEquals(42, results[1].id)
+            assertEquals("Meaning of Life", results[1].name)
+        }
+    }
+
+    describe("using cached row sets") {
+        it("can use cached row set") {
             subject.select("SELECT * from spektest")
-                .also { assertTrue(it.size() == 2, "Size is ${it.size()}") }
+                .also { assertEquals(2, it.size()) }
                 .forEach {
-                    val row = mapper(it)
-                    assertEquals(it.getInt(1), row.id)
+                    val id = getInt(1)
+                    assertTrue(id == 1 || id == 42)
                 }
+        }
+    }
+
+    describe("named parameters") {
+        it("can use named parameters") {
+            val result = subject.selectFirst(
+                "SELECT id, name FROM spektest WHERE id = :id",
+                mapOf("id" to 1),
+                action = { FooRow(getInt("id"), getString("name")) }
+            )
+            assertNotNull(result)
+            assertEquals(1, result.id)
+            assertEquals("Foo", result.name)
         }
     }
 })
