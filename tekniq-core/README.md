@@ -34,6 +34,42 @@ fun test() {
 }
 ```
 
+### Type-Safe Config Binding
+
+Stringly-typed `getInt("port")` lookups silently produce `null` on typos and force every call site to handle
+nullability. `bind<T>()` replaces that with a typed, fail-fast read: a data class is bound at startup and any
+missing or wrong-type value throws `TqConfigBindException` with the exact config path.
+
+```kotlin
+@TqConfigPrefix("mongo")
+data class MongoConfig(
+    val uri: String,
+    val database: String,
+    val pool: MongoPoolConfig = MongoPoolConfig(),
+    val retry: MongoRetryConfig = MongoRetryConfig(),
+    val ssl: MongoSslConfig? = null,
+    val options: Map<String, String> = emptyMap(),
+    val tags: List<String> = emptyList()
+)
+
+data class MongoPoolConfig(val min: Int = 0, val max: Int = 100, val acquireTimeoutMs: Long = 30_000)
+data class MongoRetryConfig(val attempts: Int = 3, val backoffMs: Long = 100)
+data class MongoSslConfig(val enabled: Boolean = false, val trustStorePath: String? = null)
+
+object AppConfig : TqChainConfig(
+    TqPropertiesConfig("/etc/myapp/mongo.properties"),
+    TqPropertiesConfig("classpath:/mongo.properties")
+)
+
+val mongo = AppConfig.bind<MongoConfig>()
+```
+
+The same `bind<MongoConfig>()` reads from any `TqConfig` source (properties, JSON via `tekniq-config`, env,
+chained). Defaults declared on the data class are honored, nested data classes are bound recursively, and `List`
+plus `Map<String, V>` are resolved automatically. To pick a different prefix, pass it explicitly:
+`config.bind<MongoConfig>(prefix = "ordersMongo")`. For the Jackson variant (sealed types, custom
+deserializers, `@JsonInclude` post-processing) see `tekniq-config`.
+
 ## TqCron
 
 A quick and easy way to handle cron calculations.
