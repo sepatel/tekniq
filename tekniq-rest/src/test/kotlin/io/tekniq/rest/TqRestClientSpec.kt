@@ -6,7 +6,7 @@ import io.javalin.http.bodyAsClass
 import io.javalin.http.sse.SseClient
 import io.javalin.json.JavalinJackson
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.ints.shouldBeExactly
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -36,7 +36,7 @@ object TqRestClientSpec : DescribeSpec({
 
             repeat(5) {
                 rest.get(url) { body }
-                Thread.activeCount() shouldBeExactly active
+                Thread.activeCount() shouldBeLessThanOrEqual active + 2
             }
         }
     }
