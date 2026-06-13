@@ -27,7 +27,7 @@ open class TqRestClient(
     version: HttpClient.Version? = null
 ) {
     companion object {
-        private val defaultMapper: ObjectMapper = ObjectMapper()
+        private val restMapper: ObjectMapper = ObjectMapper()
             .registerModule(
                 KotlinModule.Builder()
                     .withReflectionCacheSize(512)
@@ -41,6 +41,21 @@ open class TqRestClient(
             .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
+        private val jacksonConfigMapperAccessor: (() -> ObjectMapper)? = resolveJacksonConfigMapper()
+
+        private val defaultMapper: ObjectMapper
+            get() = jacksonConfigMapperAccessor?.invoke() ?: restMapper
+
+        private fun resolveJacksonConfigMapper(): (() -> ObjectMapper)? = try {
+            val clazz = Class.forName("io.tekniq.config.TqJacksonConfig")
+            val instance = clazz.getField("INSTANCE").get(null)
+            val getter = clazz.getMethod("getDefaultMapper")
+            val accessor: () -> ObjectMapper = { getter.invoke(instance) as ObjectMapper }
+            accessor
+        } catch (e: Throwable) {
+            null
+        }
     }
 
     private val ctx = SSLContext.getInstance("SSL").also {

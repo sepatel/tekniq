@@ -3,7 +3,7 @@ package io.tekniq.tracking
 import java.util.*
 
 enum class TqTrackingType {
-    FedEx, UPS, USPS
+    Airborne, AustraliaPost, CanadaPost, DHL, FedEx, TNT, UPS, USPS
 }
 
 object TqTracking {

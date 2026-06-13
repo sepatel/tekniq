@@ -4,13 +4,6 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 
 object TqTrackingSpec : DescribeSpec({
-    describe("TqTrackingType enum") {
-        it("contains only implemented carriers") {
-            TqTrackingType.entries.size shouldBe 3
-            TqTrackingType.entries shouldBe listOf(TqTrackingType.FedEx, TqTrackingType.UPS, TqTrackingType.USPS)
-        }
-    }
-
     describe("FedEx tracking number validation") {
         it("validates FedEx Express tracking numbers") {
             TqTracking.getTrackingType("012345678983") shouldBe TqTrackingType.FedEx

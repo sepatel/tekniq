@@ -4,6 +4,8 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.tekniq.crypto.TqCryptography.decrypt
 import io.tekniq.crypto.TqCryptography.encrypt
+import io.tekniq.crypto.TqCryptography.sign
+import io.tekniq.crypto.TqCryptography.verify
 import kotlin.test.assertEquals
 
 object TqCryptoSpec : DescribeSpec({
@@ -13,6 +15,19 @@ object TqCryptoSpec : DescribeSpec({
             val encrypted = keypair.encrypt("Hello Flying Purple Monkey!")
             val decrypted = keypair.decrypt(encrypted)
             assertEquals("Hello Flying Purple Monkey!", decrypted)
+        }
+    }
+
+    describe("Signing and Verification") {
+        val keypair = TqCryptography.generateKeyPair()
+        it("signs and verifies a message") {
+            val message = "Guardians of the Galaxy"
+            val signature = keypair.sign(message)
+            assertEquals(true, keypair.verify(message, signature))
+        }
+        it("rejects a tampered message") {
+            val signature = keypair.sign("the original message")
+            assertEquals(false, keypair.verify("a tampered message", signature))
         }
     }
 

@@ -7,20 +7,20 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import kotlin.reflect.KClass
 
 inline fun <reified T : Any> TqConfig.bindJackson(
-    objectMapper: ObjectMapper = createRestObjectMapper(),
+    objectMapper: ObjectMapper = TqJacksonConfig.defaultMapper,
     prefix: String? = null
 ): T = bindJackson(T::class, objectMapper, prefix)
 
 fun <T : Any> TqConfig.bindJackson(
     kClass: KClass<T>,
-    objectMapper: ObjectMapper = createRestObjectMapper(),
+    objectMapper: ObjectMapper = TqJacksonConfig.defaultMapper,
     prefix: String? = null
 ): T {
     val bound = bind(kClass, prefix)
     return objectMapper.convertValue(bound, kClass.java)
 }
 
-fun createRestObjectMapper(): ObjectMapper {
+fun tqObjectMapper(): ObjectMapper {
     return ObjectMapper()
         .registerModule(
             com.fasterxml.jackson.module.kotlin.KotlinModule.Builder()

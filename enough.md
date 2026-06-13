@@ -67,34 +67,26 @@ TqWatchedConfig(config, "/etc/app.properties").startWatching()
 
 ---
 
-## Crypto Modernization
+## Crypto
 
-### OAEP Default
-Changed from MD5 to SHA-256:
+### Digital Signatures (intentional breaking change)
+`sign`/`verify` now produce/verify proper `SHA256withRSA` digital signatures. Previously they (ab)used raw
+RSA as a cipher, which is not a real signature scheme. The API shape changed accordingly:
 ```kotlin
-// Before: RSA/ECB/OAEPWithMD5AndMGF1Padding
-// After:  RSA/ECB/OAEPWithSHA-256AndMGF1Padding
+val signature = TqCryptography.sign(message, keyPair.privateKey)            // ByteArray; String overload returns Base64
+val ok: Boolean = TqCryptography.verify(message, signature, keyPair.publicKey)
+// infix-style: keyPair.sign(message) ; keyPair.verify(message, signature)
 ```
+`verify` now returns a `Boolean` and requires the original message **plus** the signature. Signatures are
+not wire-compatible with prior releases.
 
-### Signature API
-sign()/verify() now use standard `java.security.Signature` instead of raw Cipher.
-
-### AES-GCM Symmetric
+### AES-GCM Symmetric (additive)
 ```kotlin
 TqCryptography.aesGcmEncrypt(plaintext, key)
 TqCryptography.aesGcmDecrypt(ciphertext, key)
 ```
 
-### Segregated Unsafe
-MD5 moved to `UnsafeHash` with deprecation warnings.
-
----
-
-## Tracking: API Narrowed
-
-Removed unimplemented carriers from `TqTrackingType`:
-- Before: Airborne, AustraliaPost, CanadaPost, DHL, FedEx, TNT, UPS, USPS
-- After: FedEx, UPS, USPS
+RSA `encrypt`/`decrypt` (OAEP-MD5), `md5(...)`, and `TqTrackingType` are unchanged from prior releases.
 
 ---
 

@@ -1,41 +1,42 @@
 package io.tekniq.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 /**
  * Process-wide default ObjectMapper used by [bindJackson] when no mapper is supplied explicitly.
  *
- * Configure once at application bootstrap with [configure]; every subsequent [bindJackson] call without
- * an explicit mapper will use the configured instance. Configuration is one-shot per [configure] call —
- * each call starts from a fresh `jacksonObjectMapper()` and applies the customizer, so re-calling it
- * is safe and replaces the previous default.
+ * The out-of-the-box default is the standard tekniq mapper ([tqObjectMapper]): a Kotlin-aware mapper that
+ * reads unknown enum values as null, accepts single values as arrays, and does not fail on unknown
+ * properties. This is simply the cleanest default for the most common use across the tekniq universe (the
+ * REST client uses the same configuration), not a REST-specific mapper. Configure once at application
+ * bootstrap with [configure]; every subsequent [bindJackson] call without an explicit mapper will use the
+ * configured instance. Configuration is one-shot per [configure] call — each call starts from a fresh
+ * [tqObjectMapper] and applies the customizer, so re-calling it is safe and replaces the previous default.
  *
  * Example:
  * ```
  * TqJacksonConfig.configure {
  *     registerModule(JavaTimeModule())
- *     registerModule(KotlinModule.Builder().build())
  *     disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
  * }
  * ```
  */
 object TqJacksonConfig {
     @Volatile
-    private var instance: ObjectMapper = jacksonObjectMapper()
+    private var instance: ObjectMapper = tqObjectMapper()
 
     /**
-     * The current default mapper. Returns whatever was last set via [configure], or the Kotlin
-     * `jacksonObjectMapper()` if never configured. Read-only — call [configure] to replace.
+     * The current default mapper. Returns whatever was last set via [configure], or the default
+     * [tqObjectMapper] if never configured. Read-only — call [configure] to replace.
      */
     val defaultMapper: ObjectMapper get() = instance
 
     /**
-     * Replace the default mapper with `customizer(jacksonObjectMapper())`. Each call rebuilds the
-     * mapper from scratch, so previous customizations are discarded.
+     * Replace the default mapper with `customizer(tqObjectMapper())`. Each call rebuilds the mapper from
+     * the tekniq baseline, so previous customizations are discarded.
      */
     fun configure(customizer: ObjectMapper.() -> ObjectMapper) {
-        instance = customizer(jacksonObjectMapper())
+        instance = customizer(tqObjectMapper())
     }
 
     /**
@@ -46,8 +47,8 @@ object TqJacksonConfig {
         instance = mapper
     }
 
-    /** Reset to the unmodified `jacksonObjectMapper()`. Primarily for tests. */
+    /** Reset to the default [tqObjectMapper]. Primarily for tests. */
     fun reset() {
-        instance = jacksonObjectMapper()
+        instance = tqObjectMapper()
     }
 }

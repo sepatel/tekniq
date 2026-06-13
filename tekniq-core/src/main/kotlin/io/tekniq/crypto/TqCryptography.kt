@@ -24,32 +24,32 @@ object TqCryptography {
     infix fun TqKeyPair.encrypt(message: String): String = encrypt(message, this.publicKey)
     infix fun TqKeyPair.sign(message: ByteArray): ByteArray = sign(message, this.privateKey)
     infix fun TqKeyPair.sign(message: String): String = sign(message, this.privateKey)
-    infix fun TqKeyPair.verify(message: ByteArray): ByteArray = verify(message, this.publicKey)
-    infix fun TqKeyPair.verify(message: String): String = verify(message, this.publicKey)
+    fun TqKeyPair.verify(message: ByteArray, signature: ByteArray): Boolean = verify(message, signature, this.publicKey)
+    fun TqKeyPair.verify(message: String, signature: String): Boolean = verify(message, signature, this.publicKey)
 
     fun decrypt(message: ByteArray, key: TqKeyPair.PrivateKey): ByteArray =
-        transform(message, Cipher.DECRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding")
+        transform(message, Cipher.DECRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithMD5AndMGF1Padding")
 
     fun decrypt(message: String, key: TqKeyPair.PrivateKey): String =
-        transform(message, Cipher.DECRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding")
+        transform(message, Cipher.DECRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithMD5AndMGF1Padding")
 
     fun encrypt(message: ByteArray, key: TqKeyPair.PublicKey): ByteArray =
-        transform(message, Cipher.ENCRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding")
+        transform(message, Cipher.ENCRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithMD5AndMGF1Padding")
 
     fun encrypt(message: String, key: TqKeyPair.PublicKey): String =
-        transform(message, Cipher.ENCRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding")
+        transform(message, Cipher.ENCRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithMD5AndMGF1Padding")
 
     fun sign(message: ByteArray, key: TqKeyPair.PrivateKey): ByteArray =
-        signWithRsa(message, key.rsaKey, "SHA256withRSA")
+        rsaSign(message, key.rsaKey)
 
     fun sign(message: String, key: TqKeyPair.PrivateKey): String =
-        signWithRsa(message.toByteArray(), key.rsaKey, "SHA256withRSA").let { Base64.getEncoder().encodeToString(it) }
+        Base64.getEncoder().encodeToString(rsaSign(message.toByteArray(), key.rsaKey))
 
-    fun verify(message: ByteArray, key: TqKeyPair.PublicKey): ByteArray =
-        verifyWithRsa(message, key.rsaKey, "SHA256withRSA")
+    fun verify(message: ByteArray, signature: ByteArray, key: TqKeyPair.PublicKey): Boolean =
+        rsaVerify(message, signature, key.rsaKey)
 
-    fun verify(message: String, key: TqKeyPair.PublicKey): String =
-        verifyWithRsa(Base64.getDecoder().decode(message), key.rsaKey, "SHA256withRSA").let { String(it) }
+    fun verify(message: String, signature: String, key: TqKeyPair.PublicKey): Boolean =
+        rsaVerify(message.toByteArray(), Base64.getDecoder().decode(signature), key.rsaKey)
 
     fun aesGcmEncrypt(plaintext: ByteArray, key: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -90,10 +90,8 @@ object TqCryptography {
     fun sha256(text: String, encoding: Encoding = Encoding.Hex): String =
         String(digest(text.toByteArray(), "SHA-256", encoding))
 
-    @Deprecated("MD5 is cryptographically broken. Use SHA-256 instead.", level = DeprecationLevel.WARNING)
     fun md5(text: ByteArray, encoding: Encoding = Encoding.Hex): ByteArray = digest(text, "MD5", encoding)
 
-    @Deprecated("MD5 is cryptographically broken. Use SHA-256 instead.", level = DeprecationLevel.WARNING)
     fun md5(text: String, encoding: Encoding = Encoding.Hex): String =
         String(digest(text.toByteArray(), "MD5", encoding))
 
@@ -201,25 +199,20 @@ object TqCryptography {
 
     private fun toHexString(ba: ByteArray): String = ba.joinToString("", transform = { "%02x".format(it) })
 
-    private fun signWithRsa(message: ByteArray, key: RSAPrivateKeySpec, algorithm: String): ByteArray {
-        val factory = KeyFactory.getInstance("RSA")
-        val privateKey = factory.generatePrivate(key)
-        val signature = Signature.getInstance(algorithm)
+    private fun rsaSign(message: ByteArray, key: RSAPrivateKeySpec): ByteArray {
+        val privateKey = KeyFactory.getInstance("RSA").generatePrivate(key)
+        val signature = Signature.getInstance("SHA256withRSA")
         signature.initSign(privateKey)
         signature.update(message)
         return signature.sign()
     }
 
-    private fun verifyWithRsa(signatureBytes: ByteArray, key: RSAPublicKeySpec, algorithm: String): ByteArray {
-        val factory = KeyFactory.getInstance("RSA")
-        val publicKey = factory.generatePublic(key)
-        val signature = Signature.getInstance(algorithm)
-        signature.initVerify(publicKey)
-        signature.update(signatureBytes)
-        if (!signature.verify(signatureBytes)) {
-            error("Signature verification failed")
-        }
-        return signatureBytes
+    private fun rsaVerify(message: ByteArray, signature: ByteArray, key: RSAPublicKeySpec): Boolean {
+        val publicKey = KeyFactory.getInstance("RSA").generatePublic(key)
+        val verifier = Signature.getInstance("SHA256withRSA")
+        verifier.initVerify(publicKey)
+        verifier.update(message)
+        return verifier.verify(signature)
     }
 
     private fun transform(message: String, mode: Int, key: KeySpec, cipher: String): String =
