@@ -1,4 +1,4 @@
-@file:Suppress("unused", "NOTHING_TO_INLINE")
+@file:Suppress("unused")
 
 package io.tekniq.jdbc
 
@@ -9,16 +9,10 @@ import java.sql.Statement
 import javax.sql.rowset.CachedRowSet
 import javax.sql.rowset.RowSetProvider
 
-inline fun <T> Connection.stream(sql: String, vararg params: Any?, noinline action: (rs: ResultSet) -> T): Sequence<T> =
-    prepareStatement(sql).let {
-        it.applyParams(*params)
-        it.closeOnCompletion()
-        ResultSetIterator(it.executeQuery(), action).asSequence()
-    }
+typealias RowMapper<T> = ResultSet.() -> T
 
-inline fun Connection.select(sql: String, vararg params: Any?): CachedRowSet = prepareStatement(sql)
+fun Connection.select(sql: String): CachedRowSet = prepareStatement(sql)
     .use { stmt ->
-        stmt.applyParams(*params)
         stmt.executeQuery().use { rs ->
             RowSetProvider.newFactory()
                 .createCachedRowSet()
@@ -26,64 +20,62 @@ inline fun Connection.select(sql: String, vararg params: Any?): CachedRowSet = p
         }
     }
 
-inline fun Connection.select(sql: String, vararg params: Any?, action: (rs: ResultSet) -> Unit) = prepareStatement(sql)
-    .use { stmt ->
-        stmt.applyParams(*params)
-        stmt.executeQuery().use { rs ->
-            while (rs.next()) {
-                action.invoke(rs)
-            }
-        }
+fun <T> Connection.select(sql: String, vararg params: Any?, action: RowMapper<T>): Sequence<T> {
+    val (normalizedSql, names) = parseNamedParameters(sql)
+    val paramValues = if (names.isEmpty()) params.toList() else {
+        val paramMap = params.getOrNull(0) as? Map<String, Any?>
+        paramMap?.let { map -> names.map { map[it] } } ?: params.toList()
     }
-
-inline fun <T> Connection.select(sql: String, vararg params: Any?, action: (rs: ResultSet) -> T): List<T> {
-    val list = mutableListOf<T>()
-    prepareStatement(sql).use { stmt ->
-        stmt.applyParams(*params)
-        stmt.executeQuery().use { rs ->
-            while (rs.next()) {
-                list.add(action.invoke(rs))
-            }
-        }
+    return prepareStatement(normalizedSql).let { stmt ->
+        stmt.applyParams(*paramValues.toTypedArray())
+        stmt.closeOnCompletion()
+        ResultSetSequence(stmt.executeQuery(), action)
     }
-    return list
 }
 
-inline fun <T> Connection.selectOne(sql: String, vararg params: Any?, action: (rs: ResultSet) -> T): T? {
-    var value: T? = null
-    prepareStatement(sql).use { stmt ->
-        stmt.applyParams(*params)
+fun <T> Connection.selectFirst(sql: String, vararg params: Any?, action: RowMapper<T>): T? {
+    val (normalizedSql, names) = parseNamedParameters(sql)
+    val paramValues = if (names.isEmpty()) params.toList() else {
+        val paramMap = params.getOrNull(0) as? Map<String, Any?>
+        paramMap?.let { map -> names.map { map[it] } } ?: params.toList()
+    }
+    return prepareStatement(normalizedSql).use { stmt ->
+        stmt.applyParams(*paramValues.toTypedArray())
         stmt.executeQuery().use { rs ->
-            if (rs.next()) {
-                value = action.invoke(rs)
-            }
+            if (rs.next()) action(rs) else null
         }
     }
-    return value
 }
 
 fun Connection.delete(sql: String, vararg params: Any?): Int = update(sql, *params)
 fun Connection.insert(sql: String, vararg params: Any?): Int = update(sql, *params)
-fun Connection.update(sql: String, vararg params: Any?): Int = prepareStatement(sql).use {
-    it.applyParams(*params)
-    it.executeUpdate()
+
+fun Connection.update(sql: String, vararg params: Any?): Int {
+    val (normalizedSql, names) = parseNamedParameters(sql)
+    val paramValues = if (names.isEmpty()) params.toList() else {
+        val paramMap = params.getOrNull(0) as? Map<String, Any?>
+        paramMap?.let { map -> names.map { map[it] } } ?: params.toList()
+    }
+    return prepareStatement(normalizedSql).use { stmt ->
+        stmt.applyParams(*paramValues.toTypedArray())
+        stmt.executeUpdate()
+    }
 }
 
-@SuppressWarnings("NestedBlockDepth")
-fun Connection.insertReturnKey(sql: String, vararg params: Any?): String? =
-    prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
-        stmt.applyParams(*params)
-        val result = stmt.executeUpdate()
-        var answer: String? = null
-        if (result == 1) {
-            stmt.generatedKeys.use { rs ->
-                if (rs.next()) {
-                    answer = rs.getString(1)
-                }
-            }
-        }
-        return answer
+fun Connection.insertReturnKey(sql: String, vararg params: Any?): String? {
+    val (normalizedSql, names) = parseNamedParameters(sql)
+    val paramValues = if (names.isEmpty()) params.toList() else {
+        val paramMap = params.getOrNull(0) as? Map<String, Any?>
+        paramMap?.let { map -> names.map { map[it] } } ?: params.toList()
     }
+    return prepareStatement(normalizedSql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+        stmt.applyParams(*paramValues.toTypedArray())
+        stmt.executeUpdate()
+        stmt.generatedKeys.use { rs ->
+            if (rs.next()) rs.getString(1) else null
+        }
+    }
+}
 
-inline fun <T> Connection.call(sql: String, action: (call: CallableStatement) -> T): T? =
-    prepareCall(sql).use { action.invoke(it) }
+fun <T> Connection.call(sql: String, action: (call: CallableStatement) -> T): T? =
+    prepareCall(sql).use { action(it) }
