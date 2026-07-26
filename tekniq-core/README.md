@@ -80,22 +80,64 @@ val nextRun = cron.next() // next trigger date
 val relativeNextRun = cron.next(Date(0)) // first time it runs relative to the given date
 ```
 
-## TqCryptography
+## TqKeyPair
 
-Public/Private Key Encryption/Decryption/Signing/Verification utilities that are lightweight, fast, and compliant with
-security audits and inspections. Also other quick and easy utilities for md5/sha256, base64 encoding/decoding, and more.
+Asymmetric keys for RSA and Ed25519 behind one sealed type. Every key half stores its standard DER encoding as a
+Base64 string — the same bytes a PEM file carries — so keys persist to any string column and rebuild from it.
 
 ```kotlin
-val key = TqCryptography.generateKeyPair()
-val encrypted = key.encrypt("This is an encrypted message")
-val decrypted = key.decrypt(encrypted)
-assertTrue("This is an encrypted message", encrypted)
+val rsa = TqKeyPair.Rsa.generate()          // optional bits = 2048
+val ed = TqKeyPair.Ed25519.generate()
+```
 
-val hash = TqCryptography.sha2("I am a flying purple monkey")
+Signing and verification are identical across algorithms, so code can accept a `TqKeyPair` and stay
+algorithm-agnostic:
+
+```kotlin
+fun stamp(key: TqKeyPair, message: String): String = key.sign(message) // Base64 signature
+
+val signature = ed.sign("Guardians of the Galaxy")
+ed.verify("Guardians of the Galaxy", signature) // true
+```
+
+`verify` fails closed — a tampered message, a corrupt signature or a non-Base64 string all return `false` rather
+than throwing. Verification only needs the public half, which is the half you distribute:
+
+```kotlin
+val trusted = TqPublicKey.Ed25519(publishedX509)
+trusted.verify(message, signature)
+
+// Interop with SSH, JWK and other tooling that publishes bare 32-byte Ed25519 keys
+val fromRaw = TqPublicKey.Ed25519.ofRaw(rawBytes)
+val backToRaw = fromRaw.raw()
+```
+
+Encryption exists only on `TqKeyPair.Rsa`, because Ed25519 has no encryption scheme — calling `encrypt` on an
+Ed25519 key is a compile error, not a runtime surprise. RSA encryption is hybrid: a single-use AES-256-GCM data
+key is wrapped with RSA-OAEP-SHA256, so payloads of any size work and tampering is detected.
+
+```kotlin
+val encrypted = rsa.encrypt("This is an encrypted message")
+rsa.decrypt(encrypted) // "This is an encrypted message"
+```
+
+Private keys redact themselves from `toString()`, so logging a key or a pair never leaks key material.
+
+## TqCryptography
+
+Keyless primitives: symmetric AES-GCM, digests, HMAC and Base64.
+
+```kotlin
+val encrypted = TqCryptography.aesGcmEncrypt(plaintext, key) // nonce || ciphertext || tag
+val plaintext = TqCryptography.aesGcmDecrypt(encrypted, key) // throws if altered
+
+val hash = TqCryptography.sha256("I am a flying purple monkey")
 assertEquals("36e590219098e573561b3cd3f703193f94f5d3f5e8f2cbc3f75468e06b6ba132", hash)
 
 val hash = TqCryptography.md5("I am a flying purple monkey")
 assertEquals("e1a3401853a457a79917b7a59e975333", hash)
+
+val digest = TqCryptography.hmac("Simple Digest Message", "Guardians of the Galaxy")
 ```
 
 ## TqGlob

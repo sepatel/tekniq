@@ -67,26 +67,50 @@ TqWatchedConfig(config, "/etc/app.properties").startWatching()
 
 ---
 
-## Crypto
+## Crypto (rewritten — breaking)
 
-### Digital Signatures (intentional breaking change)
-`sign`/`verify` now produce/verify proper `SHA256withRSA` digital signatures. Previously they (ab)used raw
-RSA as a cipher, which is not a real signature scheme. The API shape changed accordingly:
-```kotlin
-val signature = TqCryptography.sign(message, keyPair.privateKey)            // ByteArray; String overload returns Base64
-val ok: Boolean = TqCryptography.verify(message, signature, keyPair.publicKey)
-// infix-style: keyPair.sign(message) ; keyPair.verify(message, signature)
-```
-`verify` now returns a `Boolean` and requires the original message **plus** the signature. Signatures are
-not wire-compatible with prior releases.
+Asymmetric keys moved out of `TqCryptography` onto a single sealed `TqKeyPair` covering both RSA and Ed25519.
+`TqCryptography` now holds only the keyless primitives.
 
-### AES-GCM Symmetric (additive)
+### Unified key pair
+Key material is a Base64 DER string instead of `BigInteger` modulus/exponent pairs, so RSA and Ed25519 persist
+and rebuild identically:
 ```kotlin
-TqCryptography.aesGcmEncrypt(plaintext, key)
-TqCryptography.aesGcmDecrypt(ciphertext, key)
+val rsa = TqKeyPair.Rsa.generate(bits = 2048)
+val ed = TqKeyPair.Ed25519.generate()
+
+fun stamp(key: TqKeyPair, msg: String) = key.sign(msg)   // algorithm-agnostic
 ```
 
-RSA `encrypt`/`decrypt` (OAEP-MD5), `md5(...)`, and `TqTrackingType` are unchanged from prior releases.
+| Was | Now |
+|-----|-----|
+| `TqCryptography.generateKeyPair()` | `TqKeyPair.Rsa.generate()` |
+| `TqKeyPair.PrivateKey(modulus, exponent)` | `TqPrivateKey.Rsa(pkcs8)` |
+| `TqKeyPair.PublicKey(modulus, exponent)` | `TqPublicKey.Rsa(x509)` |
+| `TqCryptography.sign(msg, key)` | `key.sign(msg)` |
+| `TqCryptography.verify(msg, sig, key)` | `key.verify(msg, sig)` |
+
+Operations live on the keys themselves, so a bare public key can verify without a pair. `encrypt`/`decrypt` are
+declared only on the `Rsa` variant — Ed25519 has no encryption scheme, so misuse is a compile error. `verify`
+fails closed: a tampered message, corrupt signature or non-Base64 string returns `false` instead of throwing.
+Private keys redact themselves from `toString()`.
+
+### Ed25519 (new)
+Native JDK Ed25519, verified against the RFC 8032 §7.1 test vector. Includes raw 32-byte key interop in both
+directions (`TqPublicKey.Ed25519.ofRaw(bytes)` / `key.raw()`) for SSH, JWK and non-JVM tooling.
+
+### RSA encryption is now hybrid
+`encrypt` wraps a single-use AES-256-GCM data key with RSA-OAEP-SHA256. This replaces OAEP-**MD5** plus a
+hand-rolled space-delimited Base64 chunking scheme whose block-size math used the PKCS#1 v1.5 formula
+(`bits/8 - 11`), which overshoots OAEP's real limit and silently failed past ~222 bytes on a 2048-bit key.
+Payloads of any size now work and tampering is detected. Ciphertext is not wire-compatible with prior releases.
+
+### AES-GCM fixed
+`aesGcmEncrypt`/`aesGcmDecrypt` passed an `IvParameterSpec`, which SunJCE rejects outright — the functions
+threw `InvalidAlgorithmParameterException` on every call and had no test coverage. Now uses `GCMParameterSpec`
+with an explicit 128-bit tag, and the 12-byte nonce is prefixed to the ciphertext.
+
+`md5(...)`, `sha256(...)`, `hmac(...)`, the Base64 helpers and `TqTrackingType` are unchanged.
 
 ---
 
