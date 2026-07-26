@@ -1,28 +1,31 @@
 package io.tekniq.config
 
 abstract class TqConfig {
-    val keys: Set<String>
-        get() = configs.keys
-
     private val configs: MutableMap<String, Any?> = mutableMapOf()
 
-    open fun contains(key: String): Boolean {
-        if (!configs.containsKey(key)) {
-            getValue<Any?>(key) // load it into the configs in case this is the first check
-        }
-        return configs.containsKey(key)
-    }
+    /** A snapshot, so it stays safe to iterate while another thread reloads. */
+    open val keys: Set<String>
+        get() = synchronized(configs) { configs.keys.toSet() }
+
+    open fun contains(key: String): Boolean = get<Any>(key) != null
 
     inline fun <reified T : Any> get(key: String): T? = get(key, T::class.java)
-    open fun <T> get(key: String, type: Class<T>?): T? {
-        if (!configs.containsKey(key)) { // load config into the cache if missing
+
+    // Reads memoise into a map shared by every caller, so all of them have to hold the monitor.
+    // Leaving this unguarded let concurrent reads corrupt the map's own table and return values
+    // belonging to other keys. synchronized is reentrant, so a getValue that reads back in is fine.
+    open fun <T> get(key: String, type: Class<T>?): T? = synchronized(configs) {
+        if (!configs.containsKey(key)) {
             val value = getValue(key, type) ?: return null
             configs[key] = value
         }
 
         @Suppress("UNCHECKED_CAST")
-        return configs[key] as T // Allow the casting exception. Cannot make an array to an Int for example.
+        configs[key] as T // Allow the casting exception. Cannot make an array to an Int for example.
     }
+
+    /** Drops memoised reads. Decorators must call this when the values underneath them change. */
+    protected fun clearCache() = synchronized(configs) { configs.clear() }
 
     open fun getDouble(key: String): Double? {
         val any = get<Any>(key) ?: return null
@@ -75,15 +78,9 @@ abstract class TqConfig {
         // Override in subclasses to implement custom reload logic
     }
 
-    open fun reload(newConfigs: Map<String, Any?>) {
-        val existing = HashSet(configs.keys)
-        newConfigs.entries.forEach {
-            val oldValue = configs[it.key]
-            if (!configs.containsKey(it.key) || oldValue != it.value) {
-                configs[it.key] = it.value
-            }
-            existing.remove(it.key)
-        }
-        existing.forEach { configs.remove(it) }
+    /** Replaces the contents wholesale: keys absent from [newConfigs] are removed, not merged. */
+    open fun reload(newConfigs: Map<String, Any?>) = synchronized(configs) {
+        configs.keys.retainAll(newConfigs.keys)
+        configs.putAll(newConfigs)
     }
 }

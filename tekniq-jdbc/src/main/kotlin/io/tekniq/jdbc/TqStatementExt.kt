@@ -9,30 +9,42 @@ import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.Date
 
-typealias ParamMap = Map<String, Any?>
+// Alternatives are ordered so that anything a colon may legitimately live inside is consumed before
+// the placeholder rule gets a chance at it: quoted literals (with '' / "" escapes), line and block
+// comments, and PostgreSQL's :: cast. Only the final alternative captures a group, so only it is
+// ever rewritten -- 'a:b', --  :note and id::text all pass through byte for byte.
+private val sqlToken = Regex(
+    """'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|/\*.*?\*/|::\w+|:([A-Za-z_]\w*)""",
+    RegexOption.DOT_MATCHES_ALL,
+)
 
+/** Rewrites `:name` placeholders to positional `?` and returns them in binding order. */
 fun parseNamedParameters(sql: String): Pair<String, List<String>> {
     val names = mutableListOf<String>()
-    val normalizedSql = Regex("""(:[a-zA-Z_][a-zA-Z0-9_]*)""").replace(sql) {
-        names.add(it.groupValues[1].drop(1))
+    val normalizedSql = sqlToken.replace(sql) { match ->
+        val name = match.groups[1]?.value ?: return@replace match.value
+        names += name
         "?"
     }
     return normalizedSql to names
 }
 
-fun applyNamedParameters(stmt: PreparedStatement, sql: String, vararg params: Any?) {
-    val (names) = parseNamedParameters(sql)
-    if (names.isEmpty()) {
-        stmt.applyParams(*params)
-    } else {
-        val first = params.getOrNull(0)
-        if (first is Map<*, *>) {
-            val values = names.map { name -> first[name] }
-            stmt.applyParams(*values.toTypedArray())
-        } else {
-            stmt.applyParams(*params)
-        }
-    }
+/**
+ * Resolves [sql] and [params] into the statement to prepare and the values to bind.
+ *
+ * Named-parameter rewriting only happens when the caller supplied exactly one [Map]; every other
+ * call hands the SQL to the driver untouched, so a query can never be reshaped behind the caller's
+ * back. A name with no corresponding map entry fails loudly instead of binding null.
+ */
+internal fun resolveStatement(sql: String, params: Array<out Any?>): Pair<String, List<Any?>> {
+    @Suppress("UNCHECKED_CAST")
+    val values = params.singleOrNull() as? Map<String, Any?> ?: return sql to params.asList()
+    val (normalizedSql, names) = parseNamedParameters(sql)
+    if (names.isEmpty()) return sql to params.asList()
+
+    val missing = names.filterNot(values::containsKey).distinct()
+    require(missing.isEmpty()) { "No value supplied for named parameter(s) $missing in: $sql" }
+    return normalizedSql to names.map(values::get)
 }
 
 fun PreparedStatement.applyParams(vararg params: Any?) {

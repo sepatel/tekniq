@@ -225,11 +225,14 @@ open class TqCheck(
             return@test it.trim().isNotEmpty()
         }
 
-    fun custom(name: String, field: KProperty<*>? = null, message: String? = null, ifDefined: Boolean = false, predicate: (Any?) -> Boolean): TqCheck =
-        custom(name, field?.name, message, ifDefined, predicate)
+    // field is non-null and non-defaulted here, matching every sibling validator. Giving both
+    // overloads a nullable default made every call that omitted field ambiguous, which left the
+    // whole-object form -- the most useful one for a custom predicate -- impossible to compile.
+    fun custom(name: String, field: KProperty<*>, message: String? = null, ifDefined: Boolean = false, predicate: (Any?) -> Boolean): TqCheck =
+        custom(name, field.name, message, ifDefined, predicate)
 
     fun custom(name: String, field: String? = null, message: String? = null, ifDefined: Boolean = false, predicate: (Any?) -> Boolean): TqCheck =
-        test("Invalid+$name", field, message, ifDefined) {
+        test("Invalid$name", field, message, ifDefined) {
             predicate(it)
         }
 

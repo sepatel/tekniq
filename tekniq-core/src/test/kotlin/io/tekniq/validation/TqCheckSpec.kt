@@ -339,7 +339,29 @@ object TqCheckSpec : DescribeSpec({
             val check = TqCheck(mapOf("value" to -5))
             check.custom("Positive", field = "value") { ((it as? Int) ?: 0) > 0 }
             assertTrue(check.reasons.isNotEmpty())
-            assertEquals("Invalid+Positive value", check.reasons.first().code)
+            // One CamelCase token, matching InvalidURL / InvalidDate. The code doubles as the
+            // fallback message, so "Invalid+Positive" reached end users verbatim.
+            assertEquals("InvalidPositive value", check.reasons.first().code)
+        }
+
+        // Both overloads used to declare field as nullable with a default, so every call that
+        // omitted it was an overload resolution ambiguity and would not compile.
+        it("validates the whole source object when no field is given") {
+            val passing = TqCheck(mapOf("a" to 1, "b" to 2))
+            passing.custom("TwoEntries") { (it as? Map<*, *>)?.size == 2 }
+            assertTrue(passing.reasons.isEmpty())
+
+            val failing = TqCheck(mapOf("a" to 1))
+            failing.custom("TwoEntries") { (it as? Map<*, *>)?.size == 2 }
+            assertEquals("InvalidTwoEntries", failing.reasons.first().code)
+        }
+
+        it("accepts a property reference for the field") {
+            data class Person(val name: String)
+
+            val check = TqCheck(Person("Bob"))
+            check.custom("Capitalized", Person::name) { (it as? String)?.first()?.isUpperCase() == true }
+            assertTrue(check.reasons.isEmpty())
         }
 
         it("should work with custom name") {

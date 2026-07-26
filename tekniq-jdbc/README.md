@@ -7,41 +7,65 @@ Also provided is a single connection datasource as a convenience but it is highl
 vibur-dbcp be used instead for your actual datasource needs. The extensions provided by this library will cause all
 datasources and connection instances to be used in the kotlin idiom as described below.
 
-## Select One
+## Select First
 
-Returns the first row it finds or null if no rows matched
+Returns the first row it finds or null if no rows matched. The mapper runs with the `ResultSet` as
+its receiver, so columns are read directly rather than through an `it` parameter.
 
 ```kotlin
 // datasource will obtain connection, execute query, and release connection
-val person = ds.selectOne("SELECT name, age FROM person WHERE id=?", 42) {
+val person = ds.selectFirst("SELECT name, age FROM person WHERE id=?", 42) {
   Person(getString("name"), getInt("age"))
 }
 
 // connection will execute query only
-val person = conn.selectOne("SELECT name, age FROM person WHERE id=?", 42) {
+val person = conn.selectFirst("SELECT name, age FROM person WHERE id=?", 42) {
   Person(getString("name"), getInt("age"))
 }
 ```
 
 ## Select
 
-Can either act upon or return a list of transformed results found
+Reads every row into a list, releasing the statement and cursor before returning.
 
 ```kotlin
 // datasource will obtain connection, execute query, and release connection
-val people = ds.select<Person>("SELECT name, age FROM person") {
+val people = ds.select("SELECT name, age FROM person") {
   Person(getString("name"), getInt("age"))
 }
 
 // connection will execute query
-val person = conn.select<Person>("SELECT name, age FROM person") {
+val people = conn.select("SELECT name, age FROM person") {
   Person(getString("name"), getInt("age"))
 }
 
-// select without returning a list also available
-// not building objects or a list to be returned
-ds.select("SELECT name, age FROM person") {
-  log("${getString("name")} is ${getint("age")} years old")
+// for side effects, without building objects to return
+conn.select("SELECT name, age FROM person") {
+  log("${getString("name")} is ${getInt("age")} years old")
+}
+```
+
+## Stream
+
+For result sets too large to hold in memory. The sequence owns the statement and cursor, so drain it
+or wrap it in `use {}`. It reads a forward-only cursor, so it can only be iterated once.
+
+```kotlin
+conn.stream("SELECT name, age FROM person") { Person(getString("name"), getInt("age")) }
+  .use { people -> people.first { it.age > 40 } }
+```
+
+There is no `DataSource.stream`: the connection would have to be released before the first row was
+read, handing a live cursor back to the pool. Stream from a connection you hold instead.
+
+## Named Parameters
+
+Pass a single map to bind `:name` placeholders. Quoted literals, comments and `::` casts are left
+alone, and a placeholder with no matching entry throws rather than binding null.
+
+```kotlin
+val person = conn.selectFirst("SELECT name FROM person WHERE id = :id", mapOf("id" to 42)) {
+  getString("name")
 }
 ```
 
@@ -92,24 +116,31 @@ commitOnCompletion is set to false.
 // only available on the datasource extension
 // will obtain a connection, set auto-commit to false, and configure the
 // desired transaction level defaulting to read committed
-ds.transaction(commitOnCompletion=false) {
-  conn.insert("INSERT INTO person(name, age) VALUES(?, ?)", "John", 20)
-  // rollback()
-  conn.update("UPDATE person SET age=age * 2 WHERE age < ?", 20)
-  conn.delete("DELETE FROM person WHERE age < ?", 20)
+ds.transaction {
+  // the block's receiver IS the transaction's connection -- call extensions on it directly
+  insert("INSERT INTO person(name, age) VALUES(?, ?)", "John", 20)
+  update("UPDATE person SET age=age * 2 WHERE age < ?", 20)
+  delete("DELETE FROM person WHERE age < ?", 20)
 
-  val person = ds.selectOne("SELECT name, age FROM person WHERE id=?", 42) {
+  // NOT ds.selectFirst(...) -- that checks out a second connection and would not see the
+  // uncommitted rows above
+  val person = selectFirst("SELECT name, age FROM person WHERE id=?", 42) {
     Person(getString("name"), getInt("age"))
   }
-  
+
   call("{CALL foo.my_custom_pkg.method_name(?, ?, ?)}") {
-    setString("p_name", "John")
-    setAge("p_age", 42)
-    registerOutParameter("x_star_sign", Types.VARCHAR)
-    execute()
-    val star = getString("x_star_sign")
-    println("Executed complex method to determine star sign of $star")
+    it.setString("p_name", "John")
+    it.registerOutParameter("x_star_sign", Types.VARCHAR)
+    it.execute()
+    println("Star sign is ${it.getString("x_star_sign")}")
   }
-  commit() // will automatically rollback if not explicitly committed
+
+  person // the block's value is returned; commit happens on the way out
 }
 ```
+
+Pass `commitOnCompletion = false` to manage the transaction yourself. A commit that itself fails
+rolls back, so a dirty connection is never returned to the pool.
+
+Returning early with a non-local `return` skips the commit and discards the work — return a value
+from the block instead.
