@@ -55,6 +55,11 @@ val encrypted = key.encrypt("This is an encrypted message")
 val decrypted = key.decrypt(encrypted)
 assertTrue("This is an encrypted message", encrypted)
 
+val signingKey = TqCryptography.generateEd25519KeyPair()
+val message = "This message is authentic".toByteArray()
+val signature = signingKey.sign(message)
+assertTrue(signingKey.verify(message, signature))
+
 val hash = TqCryptography.sha2("I am a flying purple monkey")
 assertEquals("36e590219098e573561b3cd3f703193f94f5d3f5e8f2cbc3f75468e06b6ba132", hash)
 

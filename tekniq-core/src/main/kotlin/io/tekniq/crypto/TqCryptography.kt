@@ -16,6 +16,9 @@ object TqCryptography {
     private const val bufferSize = 4096
     private const val blockSizeDenominator = 8
     private const val blockSizeDifference = 11
+    private val ed25519PublicKeyPrefix = byteArrayOf(
+        0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00
+    )
 
     infix fun TqKeyPair.decrypt(message: ByteArray): ByteArray = decrypt(message, this.privateKey)
     infix fun TqKeyPair.decrypt(message: String): String = decrypt(message, this.privateKey)
@@ -25,6 +28,9 @@ object TqCryptography {
     infix fun TqKeyPair.sign(message: String): String = sign(message, this.privateKey)
     infix fun TqKeyPair.verify(message: ByteArray): ByteArray = verify(message, this.publicKey)
     infix fun TqKeyPair.verify(message: String): String = verify(message, this.publicKey)
+    infix fun TqEd25519KeyPair.sign(message: ByteArray): ByteArray = sign(message, this.privateKey)
+    fun TqEd25519KeyPair.verify(message: ByteArray, signature: ByteArray): Boolean =
+        verify(message, signature, this.publicKey)
 
     fun decrypt(message: ByteArray, key: TqKeyPair.PrivateKey): ByteArray =
         transform(message, Cipher.DECRYPT_MODE, key.rsaKey, "RSA/ECB/OAEPWithMD5AndMGF1Padding")
@@ -62,6 +68,43 @@ object TqCryptography {
             TqKeyPair.PrivateKey(privateKey.modulus, privateKey.privateExponent),
             TqKeyPair.PublicKey(publicKey.modulus, publicKey.publicExponent)
         )
+    }
+
+    fun generateEd25519KeyPair(): TqEd25519KeyPair {
+        val keyPair = KeyPairGenerator.getInstance(TqEd25519KeyPair.ALGORITHM).generateKeyPair()
+        return TqEd25519KeyPair(
+            TqEd25519KeyPair.PrivateKey(Base64.getEncoder().encodeToString(keyPair.private.encoded)),
+            TqEd25519KeyPair.PublicKey(Base64.getEncoder().encodeToString(keyPair.public.encoded)),
+        )
+    }
+
+    fun ed25519PublicKey(raw: ByteArray): TqEd25519KeyPair.PublicKey {
+        require(raw.size == 32) { "Ed25519 public keys must contain 32 bytes" }
+        return TqEd25519KeyPair.PublicKey(
+            Base64.getEncoder().encodeToString(ed25519PublicKeyPrefix + raw)
+        )
+    }
+
+    fun sign(message: ByteArray, key: TqEd25519KeyPair.PrivateKey): ByteArray =
+        Signature.getInstance(TqEd25519KeyPair.ALGORITHM).run {
+            initSign(key.decode())
+            update(message)
+            sign()
+        }
+
+    fun verify(
+        message: ByteArray,
+        signature: ByteArray,
+        key: TqEd25519KeyPair.PublicKey,
+    ): Boolean {
+        val verifier = Signature.getInstance(TqEd25519KeyPair.ALGORITHM)
+        verifier.initVerify(key.decode())
+        verifier.update(message)
+        return try {
+            verifier.verify(signature)
+        } catch (_: SignatureException) {
+            false
+        }
     }
 
     fun b64Decode(text: ByteArray): ByteArray = Base64.getDecoder().decode(text)
@@ -203,4 +246,3 @@ object TqCryptography {
         }
     }
 }
-
